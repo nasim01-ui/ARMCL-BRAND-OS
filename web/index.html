@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Brand Custodian Dashboard</title>
+<link rel="stylesheet" href="/web/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">ARM</span>
+    <div>
+      <h1>Brand Custodian Dashboard</h1>
+      <p class="sub">AKIJ Ready Mix · FY 2026-27</p>
+    </div>
+  </div>
+  <div class="report-date" id="report-date">--</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="overview">Overview</button>
+  <button class="tab" data-tab="sales">Sales &amp; Revenue</button>
+  <button class="tab" data-tab="budget">Budget</button>
+  <button class="tab" data-tab="campaigns">Campaigns</button>
+  <button class="tab" data-tab="competitors">Competitors</button>
+  <button class="tab" data-tab="market">Market Share</button>
+  <button class="tab" data-tab="visibility">Visibility Audit</button>
+  <button class="tab" data-tab="visits">Market Visits</button>
+  <button class="tab" data-tab="kpis">KPIs</button>
+</nav>
+
+<main>
+  <!-- OVERVIEW -->
+  <section class="pane active" id="pane-overview">
+    <div class="cards" id="overview-cards"></div>
+    <div class="row">
+      <div class="card grow">
+        <h3>Monthly Revenue Trend (12m)</h3>
+        <canvas id="revenue-chart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- SALES -->
+  <section class="pane" id="pane-sales">
+    <div class="grid">
+      <div class="card grow">
+        <h3>Sales by Zone (today)</h3>
+        <div id="zone-table"></div>
+      </div>
+      <div class="card grow">
+        <h3>Top 10 Dealers (today)</h3>
+        <div id="dealer-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUDGET -->
+  <section class="pane" id="pane-budget">
+    <div class="grid">
+      <div class="card grow">
+        <h3>FY 2026-27 Monthly Budget</h3>
+        <canvas id="budget-chart" height="240"></canvas>
+      </div>
+      <div class="card">
+        <h3>Budget Summary</h3>
+        <div id="budget-summary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMPAIGNS -->
+  <section class="pane" id="pane-campaigns">
+    <div class="card">
+      <div class="card-head">
+        <h3>Marketing Campaigns</h3>
+        <button class="btn" onclick="addItem('campaigns')">+ Add Campaign</button>
+      </div>
+      <div id="campaigns-table"></div>
+    </div>
+  </section>
+
+  <!-- COMPETITORS -->
+  <section class="pane" id="pane-competitors">
+    <div class="card">
+      <div class="card-head">
+        <h3>Competitor Monitoring</h3>
+        <button class="btn" onclick="addItem('competitors')">+ Add Competitor</button>
+      </div>
+      <div id="competitors-table"></div>
+    </div>
+  </section>
+
+  <!-- MARKET SHARE -->
+  <section class="pane" id="pane-market">
+    <div class="grid">
+      <div class="card grow">
+        <h3>Market Share by Company (by actual sales)</h3>
+        <canvas id="market-chart" height="260"></canvas>
+        <div id="market-summary"></div>
+      </div>
+      <div class="card grow">
+        <h3>Ready-Mix Competitor Capacity</h3>
+        <div id="market-table"></div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card grow">
+        <h3>Monthwise Market Share Trend <button class="tab small" id="trend-refresh" type="button">Refresh</button></h3>
+        <div id="trend-filters" class="trend-filters"></div>
+        <canvas id="trend-chart" height="260"></canvas>
+        <div id="trend-summary" class="metric-note"></div>
+        <div id="trend-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VISIBILITY -->
+  <section class="pane" id="pane-visibility">
+    <div class="card">
+      <div class="card-head">
+        <h3>Brand Visibility Audit</h3>
+        <button class="btn" onclick="addItem('visibility')">+ Add Item</button>
+      </div>
+      <div id="visibility-table"></div>
+    </div>
+  </section>
+
+  <!-- VISITS -->
+  <section class="pane" id="pane-visits">
+    <div class="card">
+      <div class="card-head">
+        <h3>Market Visit Summary</h3>
+        <button class="btn" onclick="addItem('visits')">+ Log Visit</button>
+      </div>
+      <div id="visits-table"></div>
+    </div>
+  </section>
+
+  <!-- KPIs -->
+  <section class="pane" id="pane-kpis">
+    <div class="card">
+      <div class="card-head">
+        <h3>KPI Targets</h3>
+        <button class="btn" onclick="addItem('kpis')">+ Add KPI</button>
+      </div>
+      <div id="kpis-table"></div>
+    </div>
+  </section>
+</main>
+
+<!-- add/edit modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3>Add item</h3>
+    <form class="modal-form"></form>
+    <div class="modal-actions">
+      <button class="btn" id="modal-cancel">Cancel</button>
+      <button class="btn" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="/web/app.js"></script>
+</body>
+</html>

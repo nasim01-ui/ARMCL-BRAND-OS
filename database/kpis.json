@@ -1,0 +1,57 @@
+[
+  {
+    "id": "kpi-1",
+    "name": "Revenue Growth",
+    "target": "15% YoY",
+    "actual": "11%",
+    "status": "At Risk",
+    "owner": "Brand Team",
+    "notes": "Behind due to slower Q3 contractor activity",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "kpi-2",
+    "name": "Market Share",
+    "target": "22%",
+    "actual": "20%",
+    "status": "On Track",
+    "owner": "Brand Team",
+    "notes": "",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "kpi-3",
+    "name": "Campaign ROI",
+    "target": "3.5x",
+    "actual": "2.9x",
+    "status": "At Risk",
+    "owner": "Marketing Ops",
+    "notes": "Digital CPM rising",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "kpi-4",
+    "name": "Brand Health Score",
+    "target": "78",
+    "actual": "74",
+    "status": "On Track",
+    "owner": "Brand Team",
+    "notes": "",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "kpi-5",
+    "name": "Budget Utilization",
+    "target": "90%",
+    "actual": "62%",
+    "status": "Met",
+    "owner": "Brand Team",
+    "notes": "Within approved FY26-27 budget",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  }
+]

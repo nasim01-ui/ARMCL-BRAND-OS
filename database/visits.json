@@ -1,0 +1,22 @@
+[
+  {
+    "id": "visit-1",
+    "date": "2026-08-06",
+    "contact": "Rahman Builders - Mr. Karim",
+    "type": "Contractor",
+    "findings": "Considering 500m³ order for Mirpur housing project; price sensitive",
+    "actions": "Send revised quote with volume discount before Aug 15",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "visit-2",
+    "date": "2026-08-04",
+    "contact": "Engineer Anis - DBL Project",
+    "type": "Engineer",
+    "findings": "Wants faster pump turnaround on tall structures",
+    "actions": "Share pump scheduling plan next week",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  }
+]

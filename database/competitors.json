@@ -1,0 +1,38 @@
+[
+  {
+    "id": "comp-1",
+    "name": "Mega Bricks",
+    "product": "Ready Mix 4000 psi",
+    "pricing": "৳5,200/m³",
+    "promotion": "Volume discount 5% for cash",
+    "date": "2026-08-05",
+    "threat": "High",
+    "notes": "Aggressive dealer network in North Dhaka",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "comp-2",
+    "name": "Concrete Plus",
+    "product": "Pump mix 5000 psi",
+    "pricing": "৳5,450/m³",
+    "promotion": "Free pump hour with 500m³ order",
+    "date": "2026-08-03",
+    "threat": "Medium",
+    "notes": "Strong on commercial projects, new batching plant 2027",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "comp-3",
+    "name": "Crown Mix Ltd",
+    "product": "Standard 3000 psi",
+    "pricing": "৳4,980/m³",
+    "promotion": "Intro price until Sep 2026",
+    "date": "2026-08-01",
+    "threat": "Low",
+    "notes": "Limited capacity, price-led positioning",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  }
+]

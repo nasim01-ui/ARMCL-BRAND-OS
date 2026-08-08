@@ -1,0 +1,32 @@
+[
+  {
+    "id": "vis-1",
+    "location": "Motijheel branch",
+    "asset": "Dealer signboard",
+    "status": "Good",
+    "date": "2026-08-06",
+    "notes": "Installed new LED signboard, AKIJ logo correct",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "vis-2",
+    "location": "Gulshan site",
+    "asset": "Site branding board",
+    "status": "Needs Attention",
+    "date": "2026-08-05",
+    "notes": "Paint peeling on corner panel, replace within 2 weeks",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "vis-3",
+    "location": "Uttara hoarding",
+    "asset": "Billboard",
+    "status": "Pending",
+    "date": "2026-08-01",
+    "notes": "Content awaiting creative approval",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  }
+]

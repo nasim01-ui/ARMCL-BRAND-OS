@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: armcl-brand-dashboard
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: python web/server.py
+    healthCheckPath: /
+    envVars:
+      - key: MSSQL_SERVER
+        value: 203.202.241.211
+      - key: MSSQL_PORT
+        value: 1433
+      - key: MSSQL_USER
+        value: mcp_user
+      - key: MSSQL_PASSWORD
+        value: iAOS@35o997
+      - key: MSSQL_DATABASE
+        value: DWH
+      - key: MSSQL_ENCRYPT
+        value: "false"
+      - key: GOOGLE_TOKEN_JSON
+        sync: false   # set in Render dashboard: paste contents of database/token.json
+      - key: MARKET_SHEET_FILE
+        value: 1NDWiW6q1PuykQ2uuNLcMuyU_90tVSBqLARlQxiaPgss
+      - key: MARKET_SHEET_GID
+        value: 1519626691

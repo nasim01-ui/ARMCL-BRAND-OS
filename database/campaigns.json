@@ -1,0 +1,47 @@
+[
+  {
+    "id": "cmp-email-spring",
+    "name": "Email Spring Launch",
+    "type": "Digital",
+    "channel": "Email",
+    "budget": 250000,
+    "spend": 120000,
+    "leads": 42,
+    "reach": 18000,
+    "engagement": 820,
+    "status": "Running",
+    "notes": "B2B campaign to spring construction buyers",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "cmp-social-launch",
+    "name": "Social Media Launch",
+    "type": "Digital",
+    "channel": "Social",
+    "budget": "350000",
+    "spend": 210000,
+    "leads": 87,
+    "reach": 450000,
+    "engagement": 5200,
+    "status": "Running",
+    "notes": "Brand awareness across FB, IG, LinkedIn",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  },
+  {
+    "id": "cmp-billboard-atl",
+    "name": "Billboard ATL - Dhaka Bypass",
+    "type": "ATL",
+    "channel": "Billboard",
+    "budget": "1200000",
+    "spend": 650000,
+    "leads": 0,
+    "reach": 2000000,
+    "engagement": 0,
+    "status": "Planned",
+    "notes": "12 billboards along bypass, 3-month run",
+    "created_at": "2026-08-08T10:00:00",
+    "updated_at": "2026-08-08T10:00:00"
+  }
+]

@@ -1,0 +1,185 @@
+"""market_fetch.py - Fetch monthwise market-share data from Google Sheets.
+
+Reads the "Market Share" tab (gid 1519626691) of the ARMCL market tracker
+spreadsheet via the Drive export endpoint (the file is an Office xlsx, so it
+cannot be read through the Sheets API). Cached in memory to avoid hammering
+Google on every request.
+
+Usage (as module):
+    from market_fetch import fetch_market_trend
+
+Returns {"items": [...], "updated_at": ...} or {"error": ...}.
+
+Config:
+  MARKET_SHEET_FILE  env / default "1NDWiW6q1PuykQ2uuNLcMuyU_90tVSBqLARlQxiaPgss"
+  MARKET_SHEET_GID    env / default "1519626691"
+  MARKET_SHEET_TTL    env (seconds, default 3600)
+  GOOGLE_TOKEN_JSON   env (optional) raw JSON of the Google credentials/token
+                      file. When set, the token is read from the environment
+                      instead of database/token.json (serverless / Vercel).
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import os
+import time
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "database"
+TOKEN_FILE = DATA_DIR / "token.json"
+
+SHEET_FILE = os.getenv("MARKET_SHEET_FILE", "1NDWiW6q1PuykQ2uuNLcMuyU_90tVSBqLARlQxiaPgss")
+SHEET_GID = os.getenv("MARKET_SHEET_GID", "1519626691")
+TTL = int(os.getenv("MARKET_SHEET_TTL", "3600"))
+
+_cache: dict = {"data": None, "at": 0, "token": None}
+
+
+def _token_data() -> dict | None:
+    raw = os.getenv("GOOGLE_TOKEN_JSON", "").strip()
+    if raw:
+        try:
+            return json.loads(raw)
+        except Exception:
+            return None
+    if not TOKEN_FILE.exists():
+        return None
+    try:
+        return json.loads(TOKEN_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _refresh(data: dict) -> dict:
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+
+        creds = Credentials.from_authorized_user_info(data)
+        creds.refresh(Request())
+        return json.loads(creds.to_json())
+    except Exception:
+        return data
+
+
+def _load_token(force_refresh: bool = False) -> str | None:
+    data = _token_data()
+    if not data:
+        return None
+    token = data.get("token")
+    expiry = data.get("expiry")
+    if not token:
+        return None
+    needs = force_refresh
+    if not needs and expiry:
+        try:
+            exp = datetime.fromisoformat(str(expiry).replace("Z", "+00:00"))
+            if datetime.now(exp.tzinfo) >= exp - __import__("datetime").timedelta(minutes=2):
+                needs = True
+        except Exception:
+            needs = True
+    if needs and data.get("refresh_token"):
+        data = _refresh(data)
+        _cache["token"] = data.get("token") or token
+        return data.get("token") or _cache["token"]
+    _cache["token"] = token
+    return token
+    try:
+        return json.loads(TOKEN_FILE.read_text(encoding="utf-8")).get("token")
+    except Exception:
+        return None
+
+
+def _export_xlsx() -> bytes:
+    token = _load_token()
+    if not token:
+        raise RuntimeError("no Google token configured")
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_FILE}/export?format=xlsx&gid={SHEET_GID}"
+    req = urllib.request.Request(url, headers={"Authorization": "Bearer " + token})
+    with urllib.request.urlopen(req, timeout=90) as r:
+        return r.read()
+
+
+def _parse(raw: bytes) -> list[dict]:
+    from openpyxl import load_workbook
+
+    wb = load_workbook(io.BytesIO(raw), data_only=True)
+    headers = None
+    items: list[dict] = []
+    for ws in wb.worksheets:
+        for row in ws.iter_rows(values_only=True):
+            if not any(v is not None for v in row):
+                continue
+            vals = ["" if v is None else v for v in row]
+            if headers is None:
+                # first nonempty row is the header
+                headers = vals
+                continue
+            if str(vals[0]).strip().lower() == "avg":
+                continue
+            month = vals[0]
+            # normalize month to a label
+            if isinstance(month, datetime):
+                # sheet encodes year as day: e.g. 2026-01-25 => Jan 2025, 2026-01-26 => Jan 2026
+                year = 2000 + (month.day % 100) if month.day >= 1 else month.year
+                label = f"{year:04d}-{month.month:02d}"
+            else:
+                label = str(month).strip()
+            try:
+                def num(x):
+                    try:
+                        return round(float(x), 2)
+                    except Exception:
+                        return None
+                g = vals[6] if len(vals) > 6 else None
+                if g is not None:
+                    try:
+                        g = round(float(g) * 100, 2)
+                    except Exception:
+                        g = None
+                items.append({
+                    "month": label,
+                    "shah": num(vals[1]),
+                    "crown": num(vals[2]),
+                    "nde": num(vals[3]),
+                    "basundhara": num(vals[4]),
+                    "akij": num(vals[5]),
+                    "market_share_akij": g,
+                })
+            except IndexError:
+                continue
+    return items
+
+
+def get_market_trend(force: bool = False) -> dict:
+    now = time.time()
+    if not force and _cache["data"] is not None and (now - _cache["at"]) < TTL:
+        return _cache["data"]
+    try:
+        raw = _export_xlsx()
+        items = _parse(raw)
+        data = {
+            "items": items,
+            "source": "Google Sheet",
+            "sheet": SHEET_FILE,
+            "gid": SHEET_GID,
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _cache["data"] = data
+        _cache["at"] = now
+        return data
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e), "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def refresh() -> dict:
+    return get_market_trend(force=True)
+
+
+if __name__ == "__main__":
+    print(json.dumps(get_market_trend(force=True), ensure_ascii=False, indent=2))

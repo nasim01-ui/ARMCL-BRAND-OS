@@ -1,0 +1,15 @@
+# secrets - never commit these
+.env
+database/token.json
+database/credentials.json
+*.pem
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# render / vercel
+.vercel/
+render-deploy/
