@@ -32,8 +32,35 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0b1220 0%, #152033 50%, #1e293b 100%);
-  border-bottom: 6px solid var(--akij);
+  background: radial-gradient(1200px 700px at 50% -10%, rgba(37,99,235,.22), transparent 60%),
+              linear-gradient(135deg, #0b1220 0%, #0f172a 40%, #152033 100%);
+  position: relative;
+  overflow: hidden;
+}
+.login-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml,\
+    <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">\
+      <path fill="none" stroke="%23ffffff11" stroke-width="1" d="M0 0l160 160M160 0L0 160"/>\
+      <circle cx="40" cy="40" r="80" fill="none" stroke="%23ffffff08" stroke-width="1"/>\
+      <circle cx="120" cy="120" r="60" fill="none" stroke="%232563eb44" stroke-width="1"/>\
+    </svg>');
+  opacity: .55;
+  mix-blend-mode: screen;
+}
+.login-card {
+  background: linear-gradient(155deg, rgba(22,33,64,.9), rgba(30,41,65,.96));
+  border: 1px solid var(--border-2);
+  border-left: 5px solid var(--akij);
+  border-radius: 16px;
+  padding: 40px 40px 36px;
+  width: min(400px, 90vw);
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(4px);
 }
 .login-card {
   background: var(--card);
@@ -47,7 +74,8 @@ body {
 .login-brand .logo.big { font-size: 34px; }
 .login-brand h1 { font-size: 22px; margin: 6px 0 2px; font-weight: 800; color: #fff; }
 .login-brand h2 { color: var(--akij); font-size: 16px; margin-bottom: 2px; }
-.login-tag { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.login-tag { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.login-sub { color: var(--text); font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 .login-form label { display: block; color: var(--muted); font-size: 12px; margin: 10px 0 4px; font-weight: 600; text-align: left; }
 .login-form input { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border-2); border-radius: 10px; padding: 11px 12px; font-size: 14px; }
 .login-form input:focus { outline: 2px solid var(--akij); border-color: var(--akij); }

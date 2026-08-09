@@ -120,7 +120,14 @@ async function loadDashboard() {
   if (Array.isArray(rev)) drawBars(document.getElementById("revenue-chart"), rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
 
   drawBars(document.getElementById("sales-target-chart"),
-    [{ label: "Target", value: 55000 }, { label: "Achieved", value: m.volume || Math.round((m.value || 0) / 3.5e6 * 1000) }]);
+    [{ label: "Target", value: 55000 }, { label: "Achieved", value: m.volume || 0 }]);
+
+  const ach = 55000 ? Math.round((m.volume || 0) * 100 / 55000) : 0;
+  document.getElementById("sales-perf").innerHTML = `
+    <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">55,000 CFT</span></div>
+    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(m.volume || 0)} CFT</span></div>
+    <div class="summary-row"><span class="lbl">Completion</span><span class="val">${ach}%</span></div>`;
+  el("dash-target").textContent = ach + "%";          // real target achievement
 
   await loadMiniMarket();
   await loadTasks();
