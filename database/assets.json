@@ -1,0 +1,47 @@
+[
+  {
+    "id": "asset-1",
+    "category": "LOGO",
+    "name": "AKIJ Ready Mix Master Logo",
+    "tags": ["logo", "primary"],
+    "usage": "Approved",
+    "size_mb": 2.1,
+    "updated": "2026-07-01"
+  },
+  {
+    "id": "asset-2",
+    "category": "TRUCK IMAGES",
+    "name": "Transit Mixer - Blue Campaign",
+    "tags": ["truck", "mixer", "blue"],
+    "usage": "Approved",
+    "size_mb": 4.8,
+    "updated": "2026-07-12"
+  },
+  {
+    "id": "asset-3",
+    "category": "PROJECT IMAGES",
+    "name": "Mirpur Complex Pour July",
+    "tags": ["project", "pour", "site"],
+    "usage": "Approved",
+    "size_mb": 3.4,
+    "updated": "2026-07-18"
+  },
+  {
+    "id": "asset-4",
+    "category": "PRESENTATIONS",
+    "name": "BrandOS Executive Deck v1",
+    "tags": ["deck", "executive", "brandos"],
+    "usage": "Draft",
+    "size_mb": 12.0,
+    "updated": "2026-08-01"
+  },
+  {
+    "id": "asset-5",
+    "category": "GUIDELINES",
+    "name": "Brand Guidelines 2026 PDF",
+    "tags": ["guideline", "color", "typography"],
+    "usage": "Approved",
+    "size_mb": 6.2,
+    "updated": "2026-06-20"
+  }
+]

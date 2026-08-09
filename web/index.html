@@ -3,154 +3,359 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Brand Custodian Dashboard</title>
+<title>AKIJ Ready Mix BrandOS</title>
 <link rel="stylesheet" href="/web/style.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <span class="logo">ARM</span>
-    <div>
-      <h1>Brand Custodian Dashboard</h1>
-      <p class="sub">AKIJ Ready Mix · FY 2026-27</p>
-    </div>
-  </div>
-  <div class="report-date" id="report-date">--</div>
-</header>
 
-<nav class="tabs">
-  <button class="tab active" data-tab="overview">Overview</button>
-  <button class="tab" data-tab="sales">Sales &amp; Revenue</button>
-  <button class="tab" data-tab="budget">Budget</button>
-  <button class="tab" data-tab="campaigns">Campaigns</button>
-  <button class="tab" data-tab="competitors">Competitors</button>
-  <button class="tab" data-tab="market">Market Share</button>
-  <button class="tab" data-tab="visibility">Visibility Audit</button>
-  <button class="tab" data-tab="visits">Market Visits</button>
-  <button class="tab" data-tab="kpis">KPIs</button>
+<!-- ============ LOGIN ============ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="logo big">ARM</span>
+      <h1>AKIJ Ready Mix</h1>
+      <h2>BrandOS</h2>
+      <p class="login-tag">AI Powered Business Command Center</p>
+    </div>
+    <form id="login-form" class="login-form">
+      <label>Email Address</label>
+      <input type="email" id="login-email" placeholder="you@akij.net" value="custodian@akij.net" required />
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" required />
+      <button type="submit" class="btn login-btn">LOGIN</button>
+      <a href="#" class="forgot">Forgot Password?</a>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="app" hidden>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button id="menu-toggle" class="icon-btn" title="Toggle menu">☰</button>
+      <span class="brand-nm">AKIJ Ready Mix <em>BrandOS</em></span>
+    </div>
+    <div class="topbar-search">
+      <span class="search-ic">🔍</span>
+      <input id="global-search" placeholder="Ask BrandOS AI — search sales, competitors, campaigns..." />
+    </div>
+    <div class="topbar-right">
+      <span class="today-date">📅 <b id="today-date">--</b></span>
+      <button class="icon-btn" id="alert-bell" title="Alerts">🔔 <span class="dot" id="alert-count">12</span></button>
+      <button class="icon-btn" id="open-ai" title="AI Assistant">🤖</button>
+      <button class="avatar" id="profile-btn" title="Profile">👤 <span>Brand Custodian</span></button>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="menu" id="menu">
+        <button class="menu-item active" data-page="dashboard">🏠 Dashboard</button>
+        <button class="menu-item" data-page="revenue">💰 Revenue Intelligence</button>
+        <button class="menu-item" data-page="sales">📦 Sales Analytics</button>
+        <button class="menu-item" data-page="market">📈 Market Share Intelligence</button>
+        <button class="menu-item" data-page="competitors">🏢 Competitor Intelligence</button>
+        <button class="menu-item" data-page="projects">🏗 Project Intelligence</button>
+        <button class="menu-item" data-page="dealers">🤝 Dealer Management</button>
+        <button class="menu-item" data-page="customers">👥 Customer Intelligence</button>
+        <button class="menu-item" data-page="campaigns">🎯 Campaign Management</button>
+        <button class="menu-item" data-page="creative">🎨 AI Creative Studio</button>
+        <button class="menu-item" data-page="governance">🛡 Brand Guideline Guardian</button>
+        <button class="menu-item" data-page="assets">📁 Brand Asset Library</button>
+        <button class="menu-item" data-page="field">📍 Market Visit Intelligence</button>
+        <button class="menu-item" data-page="budget">💳 Marketing Budget</button>
+        <button class="menu-item" data-page="approval">📝 Approval Workflow</button>
+        <button class="menu-item" data-page="reports">📊 Reports Center</button>
+        <button class="menu-item" data-page="assistant-page">🤖 AI Assistant</button>
+        <button class="menu-item" data-page="settings">⚙ Settings</button>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+
+      <div class="pane active" id="page-dashboard">
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Today's Revenue</div><div class="value" id="dash-rev-today">--</div><div class="delta up">↑ 8.5%</div></div>
+          <div class="card kpi-card"><div class="label">Today's Sales</div><div class="value" id="dash-sales-today">--</div><div class="delta up">↑ 12%</div></div>
+          <div class="card kpi-card"><div class="label">MTD Revenue</div><div class="value" id="dash-rev-mtd">--</div></div>
+          <div class="card kpi-card"><div class="label">MTD Target Achievement</div><div class="value" id="dash-target">--</div></div>
+          <div class="card kpi-card"><div class="label">Market Share</div><div class="value" id="dash-share">--</div></div>
+          <div class="card kpi-card"><div class="label">Brand Health Score</div><div class="value" id="dash-health">--</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h3>Revenue Trend</h3>
+              <div class="filters" id="rev-filters">
+                <button class="chip active" data-range="6M">6M</button><button class="chip" data-range="12M">12M</button>
+              </div>
+            </div>
+            <canvas id="revenue-chart" height="240"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Sales Performance</h3></div>
+            <div id="sales-perf"></div>
+            <canvas id="sales-target-chart" height="160"></canvas>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Market Share Snapshot</h3></div>
+            <div id="dash-market-snapshot"></div>
+            <canvas id="dash-share-chart" height="200"></canvas>
+          </div>
+          <div class="card ai-card">
+            <div class="card-head"><h3>🤖 Today's Intelligence</h3></div>
+            <div id="dash-ai-insight"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Today's Tasks</h3><button class="btn small" id="open-ai-task">Ask AI</button></div>
+          <div id="dash-tasks"></div>
+        </div>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="pane" id="page-revenue">
+        <h2 class="page-title">💰 Revenue Intelligence</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Today's Revenue</div><div class="value" id="r-today">--</div></div>
+          <div class="card kpi-card"><div class="label">MTD Revenue</div><div class="value" id="r-mtd">--</div></div>
+          <div class="card kpi-card"><div class="label">YTD Revenue</div><div class="value" id="r-ytd">--</div></div>
+          <div class="card kpi-card"><div class="label">Growth %</div><div class="value" id="r-growth">--</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><h3>Revenue Trend</h3><canvas id="revenue-chart2" height="220"></canvas></div>
+          <div class="card"><h3>Zone-wise Revenue</h3><div id="rev-zones"></div><canvas id="zone-chart" height="180"></canvas></div>
+        </div>
+        <div class="card"><h3>Dealer Revenue</h3><div id="rev-dealers"></div></div>
+      </div>
+
+      <!-- SALES -->
+      <div class="pane" id="page-sales">
+        <h2 class="page-title">📦 Sales Analytics</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Daily Sales</div><div class="value" id="s-daily">--</div></div>
+          <div class="card kpi-card"><div class="label">MTD Sales</div><div class="value" id="s-mtd">--</div></div>
+          <div class="card kpi-card"><div class="label">Monthly Target</div><div class="value">55,000 CFT</div></div>
+          <div class="card kpi-card"><div class="label">Achievement</div><div class="value" id="s-ach">--</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><h3>Monthly Revenue Trend</h3></div><canvas id="revenue-chart-s" height="220"></canvas></div>
+          <div class="card"><h3>Sales by Zone</h3><div id="zone-table"></div></div>
+        </div>
+        <div class="card"><h3>Top Dealers Today</h3><div id="dealer-table"></div></div>
+      </div>
+
+      <!-- MARKET SHARE -->
+      <div class="pane" id="page-market">
+        <h2 class="page-title">📈 Market Share Intelligence</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Total Market</div><div class="value" id="mk-total">--</div></div>
+          <div class="card kpi-card"><div class="label">AKIJ Share</div><div class="value" id="mk-akij">--</div></div>
+          <div class="card kpi-card"><div class="label">Industry Position</div><div class="value" id="mk-pos">--</div></div>
+          <div class="card kpi-card"><div class="label">Competitors Rated</div><div class="value" id="mk-count">--</div></div>
+        </div>
+        <div class="card"><h3>Market Share by Company (by actual sales)</h3>
+          <canvas id="market-chart" height="240"></canvas><div id="market-summary"></div></div>
+        <div class="card"><h3>Ready-Mix Competitor Capacity</h3><div id="market-table"></div></div>
+        <div class="card">
+          <div class="card-head"><h3>Monthwise Market Share Trend <button class="btn small" id="trend-refresh">Refresh</button></h3></div>
+          <div id="trend-filters" class="trend-filters"></div>
+          <canvas id="trend-chart" height="260"></canvas>
+          <div id="trend-summary" class="metric-note"></div>
+          <div id="trend-table"></div>
+        </div>
+      </div>
+
+      <!-- COMPETITORS -->
+      <div class="pane" id="page-competitors">
+        <h2 class="page-title">🏢 Competitor Intelligence</h2>
+        <div class="card"><div class="card-head"><h3>Competitor Database</h3><button class="btn" onclick="addItem('competitors')">+ Add Competitor</button></div>
+          <div id="competitors-table"></div></div>
+        <div class="card ai-card"><h3>AI Threat Monitor</h3><div id="comp-threat"></div></div>
+      </div>
+
+      <!-- PROJECTS -->
+      <div class="pane" id="page-projects">
+        <h2 class="page-title">🏗 Project Intelligence</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Active Projects</div><div class="value" id="pr-active">--</div></div>
+          <div class="card kpi-card"><div class="label">Running Sites</div><div class="value" id="pr-running">--</div></div>
+          <div class="card kpi-card"><div class="label">New Projects</div><div class="value" id="pr-new">--</div></div>
+          <div class="card kpi-card"><div class="label">Pipeline Value</div><div class="value" id="pr-value">--</div></div>
+        </div>
+        <div class="card"><h3>Project Book</h3><div id="projects-table"></div></div>
+      </div>
+
+      <!-- DEALERS -->
+      <div class="pane" id="page-dealers">
+        <h2 class="page-title">🤝 Dealer Management</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Total Dealers</div><div class="value" id="dl-total">--</div></div>
+          <div class="card kpi-card"><div class="label">Active</div><div class="value" id="dl-active">--</div></div>
+          <div class="card kpi-card"><div class="label">Inactive</div><div class="value" id="dl-inactive">--</div></div>
+        </div>
+        <div class="card"><h3>Dealer Network</h3><div id="dealers-table"></div></div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div class="pane" id="page-customers">
+        <h2 class="page-title">👥 Customer Intelligence</h2>
+        <div class="card"><div class="card-head"><h3>Customer Book</h3><button class="btn" onclick="addItem('customers')">+ Add Customer</button></div>
+          <div id="customers-table"></div></div>
+      </div>
+
+      <!-- CAMPAIGNS -->
+      <div class="pane" id="page-campaigns">
+        <h2 class="page-title">🎯 Campaign Management</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Active Campaigns</div><div class="value" id="cp-active">--</div></div>
+          <div class="card kpi-card"><div class="label">Campaign Spend</div><div class="value" id="cp-spend">--</div></div>
+          <div class="card kpi-card"><div class="label">Avg ROI</div><div class="value" id="cp-roi">--</div></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>Campaigns</h3><button class="btn" onclick="addItem('campaigns')">+ Add Campaign</button></div>
+          <div id="campaigns-table"></div></div>
+      </div>
+
+      <!-- CREATIVE -->
+      <div class="pane" id="page-creative">
+        <h2 class="page-title">🎨 AI Creative Studio</h2>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Generate Creative</h3></div>
+            <div class="stepper">
+              <label>Objective</label><select id="cr-objective"><option>Dealer activation</option><option>Developer engagement</option><option>Brand awareness</option><option>Project PR</option></select>
+              <label>Audience</label><select id="cr-audience"><option>Engineers / Developers</option><option>Contractors</option><option>Architects</option><option>General B2B</option></select>
+              <label>Media Format</label><select id="cr-format"><option>Facebook Post</option><option>LinkedIn Post</option><option>Billboard</option><option>Brochure</option><option>Video Script</option><option>Email</option></select>
+              <label>Budget (BDT)</label><input id="cr-budget" type="number" value="300000" />
+              <button class="btn" id="cre-generate">🚀 Generate</button>
+            </div>
+          </div>
+          <div class="card"><div class="card-head"><h3>Created</h3></div><div id="creative-table"></div></div>
+        </div>
+      </div>
+
+      <!-- GOVERNANCE -->
+      <div class="pane" id="page-governance">
+        <h2 class="page-title">🛡 Brand Guideline Guardian</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Brand Compliance Score</div><div class="value" id="gv-score">94%</div></div>
+          <div class="card kpi-card"><div class="label">Logo Checks</div><div class="value">128</div></div>
+          <div class="card kpi-card"><div class="label">Color Checks</div><div class="value" id="gv-color">Akij Blue · ARMC Red · White/Grey</div></div>
+          <div class="card kpi-card"><div class="label">Typography</div><div class="value" id="gv-type">Mark Pro</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><h3>Creative Approval Workflow</h3>
+            <div class="workflow">Upload Design → AI Review → Brand Score → Approve / Reject → Publish</div>
+            <div id="governance-table"></div>
+          </div>
+          <div class="card"><h3>Checkers</h3>
+            <div id="gv-checkers">
+              <div class="checker"><b>Logo Checker</b> — wrong logo · distortion · size · placement</div>
+              <div class="checker"><b>Color Checker</b> — on-brand palette enforcement</div>
+              <div class="checker"><b>Typography Checker</b> — Mark Pro mandated</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ASSETS -->
+      <div class="pane" id="page-assets">
+        <h2 class="page-title">📁 Brand Asset Library</h2>
+        <div class="card"><div class="card-head"><h3>Assets</h3><button class="btn" onclick="addItem('assets')">+ Add Asset</button></div>
+          <div id="assets-table"></div></div>
+      </div>
+
+      <!-- FIELD INTELLIGENCE -->
+      <div class="pane" id="page-field">
+        <h2 class="page-title">📍 Market Visit Intelligence</h2>
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><h3>Visibility Audit</h3><button class="btn" onclick="addItem('visibility')">+ Add Item</button></div>
+            <div id="visibility-table"></div></div>
+          <div class="card"><div class="card-head"><h3>Market Visits</h3><button class="btn" onclick="addItem('visits')">+ Log Visit</button></div>
+            <div id="visits-table"></div></div>
+        </div>
+        <div class="card"><h3>AI Field Report</h3><div id="field-report"></div></div>
+      </div>
+
+      <!-- BUDGET -->
+      <div class="pane" id="page-budget">
+        <h2 class="page-title">💳 Marketing Budget</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">FY 2026-27 Budget</div><div class="value" id="bd-total">--</div></div>
+          <div class="card kpi-card"><div class="label">Campaign Spend</div><div class="value" id="bd-used">--</div></div>
+          <div class="card kpi-card"><div class="label">Remaining</div><div class="value" id="bd-remain">--</div></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>FY 2026-27 Monthly Budget</h3></div>
+          <canvas id="budget-chart" height="220"></canvas><div id="budget-summary"></div></div>
+        <div class="card"><h3>Budget Workflow</h3>
+          <div class="workflow">Request → Approval → Quotation → PO → Payment → Report</div></div>
+      </div>
+
+      <!-- APPROVAL -->
+      <div class="pane" id="page-approval">
+        <h2 class="page-title">📝 Approval Workflow</h2>
+        <div class="grid cards">
+          <div class="card kpi-card"><div class="label">Creative Approval</div><div class="value" id="ap-creative">--</div></div>
+          <div class="card kpi-card"><div class="label">Vendor Payment</div><div class="value" id="ap-vendor">--</div></div>
+          <div class="card kpi-card"><div class="label">Dealer Branding</div><div class="value" id="ap-dealer">--</div></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>Pending Approvals</h3><button class="btn" onclick="addItem('approvals')">+ New</button></div>
+          <div id="approvals-table"></div></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="pane" id="page-reports">
+        <h2 class="page-title">📊 Reports Center</h2>
+        <div class="card"><h3>Generate Reports</h3><div id="reports-table"></div></div>
+      </div>
+
+      <!-- AI ASSISTANT -->
+      <div class="pane" id="page-assistant">
+        <h2 class="page-title">🤖 AI Assistant</h2>
+        <div class="card ai-card">
+          <h3>Ask BrandOS AI</h3>
+          <div class="chat" id="ai-chat">
+            <div class="msg ai">Hello! I'm your BrandOS AI. Ask me about revenue, sales, market share, competitors, campaigns, projects, dealers, budget or approvals.</div>
+          </div>
+          <div class="chat-input"><input id="ai-input" placeholder="e.g. Prepare August marketing plan..." /><button class="btn" id="ai-send">Send</button></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="pane" id="page-settings">
+        <h2 class="page-title">⚙ Settings</h2>
+        <div class="card"><h3>Settings Modules</h3>
+          <div class="settings-list">
+            <div class="set">Company Profile</div><div class="set">User Management</div><div class="set">Role Permission</div>
+            <div class="set">API Integration</div><div class="set">ERP Connection</div><div class="set">PowerBI Connection</div>
+            <div class="set">AI Configuration</div><div class="set">Audit Logs</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Bottom mobile nav -->
+<nav class="mobile-nav" id="mobile-nav" hidden>
+  <button class="menu-item" data-page="dashboard">Home</button>
+  <button class="menu-item" data-page="market">Market</button>
+  <button class="menu-item" data-page="campaigns">Campaigns</button>
+  <button class="menu-item" data-page="reports">Reports</button>
+  <button class="menu-item" data-page="settings">Settings</button>
 </nav>
 
-<main>
-  <!-- OVERVIEW -->
-  <section class="pane active" id="pane-overview">
-    <div class="cards" id="overview-cards"></div>
-    <div class="row">
-      <div class="card grow">
-        <h3>Monthly Revenue Trend (12m)</h3>
-        <canvas id="revenue-chart" height="220"></canvas>
-      </div>
-    </div>
-  </section>
-
-  <!-- SALES -->
-  <section class="pane" id="pane-sales">
-    <div class="grid">
-      <div class="card grow">
-        <h3>Sales by Zone (today)</h3>
-        <div id="zone-table"></div>
-      </div>
-      <div class="card grow">
-        <h3>Top 10 Dealers (today)</h3>
-        <div id="dealer-table"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- BUDGET -->
-  <section class="pane" id="pane-budget">
-    <div class="grid">
-      <div class="card grow">
-        <h3>FY 2026-27 Monthly Budget</h3>
-        <canvas id="budget-chart" height="240"></canvas>
-      </div>
-      <div class="card">
-        <h3>Budget Summary</h3>
-        <div id="budget-summary"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CAMPAIGNS -->
-  <section class="pane" id="pane-campaigns">
-    <div class="card">
-      <div class="card-head">
-        <h3>Marketing Campaigns</h3>
-        <button class="btn" onclick="addItem('campaigns')">+ Add Campaign</button>
-      </div>
-      <div id="campaigns-table"></div>
-    </div>
-  </section>
-
-  <!-- COMPETITORS -->
-  <section class="pane" id="pane-competitors">
-    <div class="card">
-      <div class="card-head">
-        <h3>Competitor Monitoring</h3>
-        <button class="btn" onclick="addItem('competitors')">+ Add Competitor</button>
-      </div>
-      <div id="competitors-table"></div>
-    </div>
-  </section>
-
-  <!-- MARKET SHARE -->
-  <section class="pane" id="pane-market">
-    <div class="grid">
-      <div class="card grow">
-        <h3>Market Share by Company (by actual sales)</h3>
-        <canvas id="market-chart" height="260"></canvas>
-        <div id="market-summary"></div>
-      </div>
-      <div class="card grow">
-        <h3>Ready-Mix Competitor Capacity</h3>
-        <div id="market-table"></div>
-      </div>
-    </div>
-    <div class="grid">
-      <div class="card grow">
-        <h3>Monthwise Market Share Trend <button class="tab small" id="trend-refresh" type="button">Refresh</button></h3>
-        <div id="trend-filters" class="trend-filters"></div>
-        <canvas id="trend-chart" height="260"></canvas>
-        <div id="trend-summary" class="metric-note"></div>
-        <div id="trend-table"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- VISIBILITY -->
-  <section class="pane" id="pane-visibility">
-    <div class="card">
-      <div class="card-head">
-        <h3>Brand Visibility Audit</h3>
-        <button class="btn" onclick="addItem('visibility')">+ Add Item</button>
-      </div>
-      <div id="visibility-table"></div>
-    </div>
-  </section>
-
-  <!-- VISITS -->
-  <section class="pane" id="pane-visits">
-    <div class="card">
-      <div class="card-head">
-        <h3>Market Visit Summary</h3>
-        <button class="btn" onclick="addItem('visits')">+ Log Visit</button>
-      </div>
-      <div id="visits-table"></div>
-    </div>
-  </section>
-
-  <!-- KPIs -->
-  <section class="pane" id="pane-kpis">
-    <div class="card">
-      <div class="card-head">
-        <h3>KPI Targets</h3>
-        <button class="btn" onclick="addItem('kpis')">+ Add KPI</button>
-      </div>
-      <div id="kpis-table"></div>
-    </div>
-  </section>
-</main>
-
-<!-- add/edit modal -->
+<!-- Add/edit modal -->
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <h3>Add item</h3>

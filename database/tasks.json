@@ -1,0 +1,37 @@
+[
+  {
+    "id": "task-1",
+    "task": "Approve dealer artwork (Uttara)",
+    "module": "Approval",
+    "due": "2026-08-09",
+    "done": false
+  },
+  {
+    "id": "task-2",
+    "task": "Review competitor activity this week",
+    "module": "Competitors",
+    "due": "2026-08-09",
+    "done": false
+  },
+  {
+    "id": "task-3",
+    "task": "Check campaign ROI - Social Launch",
+    "module": "Campaigns",
+    "due": "2026-08-10",
+    "done": false
+  },
+  {
+    "id": "task-4",
+    "task": "Generate management report",
+    "module": "Reports",
+    "due": "2026-08-10",
+    "done": false
+  },
+  {
+    "id": "task-5",
+    "task": "Review sales performance MTD",
+    "module": "Sales",
+    "due": "2026-08-11",
+    "done": false
+  }
+]

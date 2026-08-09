@@ -62,7 +62,8 @@ DB_CONFIG = {
     "database": os.getenv("MSSQL_DATABASE", "DWH"),
 }
 
-STORES = ("campaigns", "competitors", "visibility", "visits", "kpis", "market_share")
+STORES = ("campaigns", "competitors", "visibility", "visits", "kpis", "market_share",
+          "projects", "dealers", "customers", "assets", "approvals", "tasks", "creative")
 
 
 def pymssql():
@@ -323,13 +324,109 @@ class Handler(BaseHTTPRequestHandler):
             qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
             force = qs.get("refresh") == "1"
             self._json(market_fetch.get_market_trend(force=force))
+        elif p == "/api/market-trend":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            force = qs.get("refresh") == "1"
+            self._json(market_fetch.get_market_trend(force=force))
         elif p == "/api/market_share":
             self._json(load_store("market_share"))
+        elif p == "/api/insights":
+            self._json(build_insights())
+        elif p == "/api/ai":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            query = qs.get("q", "").lower()
+            self._json(ai_reply(query))
+        elif p.startswith("/api/store/"):
+            name = p[len("/api/store/"):].split("/")[0]
+            if name in STORES:
+                self._json(load_store(name))
+            else:
+                self._json({"error": "unknown store"}, status=404)
+        elif p == "/api/reports":
+            self._json(report_payload())
+        elif p[len("/api/"):] in STORES:
+            self._json(load_store(p[len("/api/"):]))
         else:
             self._json({"error": "unknown api"}, status=404)
 
 
-STORES = {"campaigns", "competitors", "visibility", "visits", "kpis", "market_share"}
+def build_insights() -> dict:
+    """Rule-based AI insight summary computed from the JSON stores."""
+    kpis = load_store("kpis")
+    comps = load_store("competitors")
+    mk = load_store("market_share")
+    akij = next((x for x in mk if "akij" in (x.get("company") or "").lower()), {})
+    share_pct = float(akij.get("share_pct") or akij.get("actual_sales_avg") or 0)
+    threats = [c for c in comps if str(c.get("threat", "")).lower() == "high"]
+    atrisk = [k for k in kpis if str(k.get("status", "")).lower() in ("at risk", "behind")]
+
+    obs_txt = f"AKIJ ready-mix market share is at {share_pct:.1f}% of rated capacity."
+    reason_txt = "Peer capacity expansion continues; see competitor watch."
+    action_txt = "Prioritize dealer activation in Dhaka & Chattogram and review campaign ROI weekly."
+    if threats:
+        obs_txt = f"High-threat competitor activity detected ({', '.join(t.get('name') for t in threats)})."
+        reason_txt = "These peers are running aggressive dealer/channel programs."
+        action_txt = "Step up developer engagement and dealer signboard coverage in contested zones."
+    if atrisk:
+        obs_txt += f" {len(atrisk)} KPI(s) flagged as at-risk/behind."
+        reason_txt += f" Focus on: {', '.join(k.get('name') for k in atrisk)}."
+        action_txt = "Assign owners and review these KPIs in the weekly EC review."
+
+    return {
+        "observation": obs_txt,
+        "reason": reason_txt,
+        "recommended_action": action_txt,
+        "share_pct": share_pct,
+        "threat_count": len(threats),
+        "kpis_at_risk": [k.get("name") for k in atrisk],
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+
+
+def ai_reply(q: str) -> dict:
+    """Tiny keyword NLU assistant for the BrandOS AI box."""
+    reply = {
+        "reply": "I can help with revenue, sales, market share, competitors, campaigns, projects, dealers, budget and approvals. Ask me like: 'What is our market share?'",
+    }
+    if any(w in q for w in ("revenue", "sales", "income")):
+        reply["reply"] = "Revenue & sales dashboard: Today's net value, MTD revenue, zone/dealer splits and 12-month trend. Drill into /revenue or /sales."
+    elif any(w in q for w in ("market share", "market-share", "share")):
+        trend = market_fetch.get_market_trend(force=False)
+        ak = None
+        if not trend.get("error") and trend.get("items"):
+            vals = [i.get("market_share_akij") for i in trend["items"] if i.get("market_share_akij") is not None]
+            ak = round(sum(vals) / len(vals), 2) if vals else None
+        reply["reply"] = f"AKIJ monthwise market share averages ~{ak}% (last sync {trend.get('updated_at')}) with Shah/NDE/Crown/Bashundhara as #1-#4 peers."
+    elif any(w in q for w in ("competitor", "threat", "rival")):
+        comps = load_store("competitors")
+        names = ", ".join(c.get("name") for c in comps) or "no competitor watch entries yet"
+        reply["reply"] = f"Competitor watch: {names}. High threat items are flagged in Competitor Intelligence."
+    elif any(w in q for w in ("campaign", "roi", "promotion")):
+        reply["reply"] = "Campaigns: see ATL/BTL/Digital programs and ROI vs budget in Campaign Management / Marketing Budget."
+    elif any(w in q for w in ("budget", "spend", "expense")):
+        reply["reply"] = "Marketing Budget: annual plan, used vs remaining, and the FY 2026-27 request→approval→PO flow."
+    elif any(w in q for w in ("kpi", "score", "health")):
+        kpis = load_store("kpis")
+        reply["reply"] = "KPI health: " + ", ".join(f"{k.get('name')}={k.get('actual') or k.get('status')}" for k in kpis)
+    return reply
+
+
+def report_payload() -> dict:
+    """Prebuilt report descriptors for the Reports Center."""
+    return {
+        "reports": [
+            {"name": "Daily Business Report", "format": "PDF/Excel", "desc": "Today's deliveries, volume, net value by zone & dealer."},
+            {"name": "Weekly Marketing Report", "format": "PPT", "desc": "Campaign spend, reach, engagement and ROI for the week."},
+            {"name": "Monthly EC Report", "format": "PPT", "desc": "Executive summary of revenue, sales, market share, brand health."},
+            {"name": "Market Share Report", "format": "Excel", "desc": "Monthwise share trend vs 4 rated peers (live Google Sheet)."},
+            {"name": "Competitor Report", "format": "PDF", "desc": "Capacity, price and threat monitor of the Ready-Mix field."},
+            {"name": "Campaign ROI Report", "format": "Excel", "desc": "ROI by channel, campaign type and status."},
+        ],
+        "formats": ["PPT", "PDF", "Excel"],
+    }
+
+
+STORES = set(STORES)
 
 
 def run(port: int = 8000):

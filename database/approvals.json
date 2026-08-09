@@ -1,0 +1,38 @@
+[
+  {
+    "id": "appr-1",
+    "type": "Creative Approval",
+    "title": "Dealer signboard artwork - Uttara",
+    "requested_by": "Dealer Manager",
+    "date": "2026-08-07",
+    "status": "Pending",
+    "days_pending": 2
+  },
+  {
+    "id": "appr-2",
+    "type": "Vendor Payment",
+    "title": "Billboard ATL - bypass rental (Jul)",
+    "requested_by": "Marketing Ops",
+    "date": "2026-08-06",
+    "status": "Pending",
+    "days_pending": 3
+  },
+  {
+    "id": "appr-3",
+    "type": "Dealer Branding",
+    "title": "LED signboards - Chattogram hub",
+    "requested_by": "Territory Lead",
+    "date": "2026-08-05",
+    "status": "Pending",
+    "days_pending": 4
+  },
+  {
+    "id": "appr-4",
+    "type": "Creative Approval",
+    "title": "August social banner set",
+    "requested_by": "Creative Studio",
+    "date": "2026-08-03",
+    "status": "Approved",
+    "days_pending": 0
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "cre-1",
+    "name": "August Facebook Ad - Dealer activation",
+    "type": "Facebook Post",
+    "objective": "Dealer activation",
+    "audience": "Civil contractors",
+    "budget": 400000,
+    "status": "Generated",
+    "brand_score": 96,
+    "created": "2026-08-08"
+  },
+  {
+    "id": "cre-2",
+    "name": "LinkedIn - Engineers (Mirpur project)",
+    "type": "LinkedIn Post",
+    "objective": "Developer engagement",
+    "audience": "Engineers/Developers",
+    "budget": 150000,
+    "status": "Draft",
+    "brand_score": 88,
+    "created": "2026-08-05"
+  }
+]

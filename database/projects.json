@@ -1,0 +1,57 @@
+[
+  {
+    "id": "prj-1",
+    "name": "Mirpur Housing Complex",
+    "developer": "Rahman Builders",
+    "location": "Mirpur, Dhaka",
+    "requirement": 5200,
+    "sales_value": 31200000,
+    "schedule": "Aug 2026 - May 2027",
+    "status": "Active",
+    "notes": "500 m3/month run rate, price sensitive"
+  },
+  {
+    "id": "prj-2",
+    "name": "DBL Rangs Tower",
+    "developer": "DBL Group",
+    "location": "Gulshan, Dhaka",
+    "requirement": 18400,
+    "sales_value": 14200000,
+    "schedule": "Jul 2026 - Jan 2027",
+    "status": "Active",
+    "notes": "Requires fast pump turnaround on tall floors"
+  },
+  {
+    "id": "prj-3",
+    "name": "Chattogram Port Link Flyover",
+    "developer": "Commodore Infra",
+    "location": "Chattogram",
+    "requirement": 92000,
+    "sales_value": 48000000,
+    "schedule": "Sep 2026 - Dec 2027",
+    "status": "New",
+    "notes": "High volume structural pour opportunity"
+  },
+  {
+    "id": "prj-4",
+    "name": "Bashundhara City Phase 4",
+    "developer": "Bashundhara Group",
+    "location": "Panthapath, Dhaka",
+    "requirement": 4500,
+    "sales_value": 2650000,
+    "schedule": "Aug 2026",
+    "status": "Active",
+    "notes": "Smaller pour, premium spec - M30+"
+  },
+  {
+    "id": "prj-5",
+    "name": "Rooppur Support Buildings",
+    "developer": "RCC Infra",
+    "location": "Pabna",
+    "requirement": 12000,
+    "sales_value": 6200000,
+    "schedule": "Oct 2026 - Feb 2027",
+    "status": "Pipeline",
+    "notes": "Logistics from Bheramara plant"
+  }
+]

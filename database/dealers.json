@@ -1,0 +1,62 @@
+[
+  {
+    "id": "dlr-1",
+    "name": "Sohrab Traders",
+    "location": "Mirpur, Dhaka",
+    "zone": "North Dhaka",
+    "status": "Active",
+    "performance": "High",
+    "incentive": "Volume tiers",
+    "branding": "Signboard installed",
+    "mtd_sales": 1250000,
+    "target": 1500000
+  },
+  {
+    "id": "dlr-2",
+    "name": "Munna Construction Supply",
+    "location": "Uttara, Dhaka",
+    "zone": "North Dhaka",
+    "status": "Active",
+    "performance": "Medium",
+    "incentive": "Co-op marketing",
+    "branding": "Needs refresh",
+    "mtd_sales": 810000,
+    "target": 900000
+  },
+  {
+    "id": "dlr-3",
+    "name": "Chittagong City Builders",
+    "location": "Agrabad, Chattogram",
+    "zone": "Chattogram",
+    "status": "Active",
+    "performance": "High",
+    "incentive": "QTD bonus",
+    "branding": "Installed",
+    "mtd_sales": 1430000,
+    "target": 1500000
+  },
+  {
+    "id": "dlr-4",
+    "name": "Gulshan Traders",
+    "location": "Gulshan, Dhaka",
+    "zone": "South Dhaka",
+    "status": "Inactive",
+    "performance": "Low",
+    "incentive": "-",
+    "branding": "None",
+    "mtd_sales": 45000,
+    "target": 0
+  },
+  {
+    "id": "dlr-5",
+    "name": "Narayanganj Concrete Mart",
+    "location": "Narayanganj",
+    "zone": "Narayanganj",
+    "status": "Active",
+    "performance": "Medium",
+    "incentive": "Rebate program",
+    "branding": "Installed",
+    "mtd_sales": 640000,
+    "target": 700000
+  }
+]

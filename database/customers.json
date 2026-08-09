@@ -1,0 +1,46 @@
+[
+  {
+    "id": "cust-1",
+    "name": "Rahman Builders",
+    "segment": "Developer",
+    "category": "High Volume",
+    "projects": 3,
+    "lifetime_value": 52000000,
+    "last_activity": "2026-08-06",
+    "status": "Active",
+    "account_manager": "A. Karim"
+  },
+  {
+    "id": "cust-2",
+    "name": "DBL Group",
+    "segment": "Corporate",
+    "category": "High Value",
+    "projects": 2,
+    "lifetime_value": 37000000,
+    "last_activity": "2026-08-04",
+    "status": "Active",
+    "account_manager": "M. Rahim"
+  },
+  {
+    "id": "cust-3",
+    "name": "Commodore Infra",
+    "segment": "Contractor",
+    "category": "Infrastructure",
+    "projects": 1,
+    "lifetime_value": 48000000,
+    "last_activity": "2026-08-02",
+    "status": "Pipeline",
+    "account_manager": "S. Hossain"
+  },
+  {
+    "id": "cust-4",
+    "name": "Excel Engineering",
+    "segment": "Engineering",
+    "category": "Specifier",
+    "projects": 5,
+    "lifetime_value": 21000000,
+    "last_activity": "2026-07-28",
+    "status": "Active",
+    "account_manager": "A. Karim"
+  }
+]
