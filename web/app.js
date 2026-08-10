@@ -367,6 +367,44 @@ function _mLabel(m) {
   const [y, mo] = (m || "").split("-");
   return names[parseInt(mo, 10) - 1] + " " + y;
 }
+function drawBars(canvas, items) {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 600;
+  const H = canvas.clientHeight || 240;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d"); ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  const pad = { top: 16, right: 12, bottom: 28, left: 46 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const vals = items.map((i) => i.value || 0);
+  const max = Math.max(...vals, 1) * 1.1;
+  ctx.font = "10px Segoe UI";
+  ctx.strokeStyle = "#334155";
+  for (let g = 0; g <= 4; g++) {
+    const y = pad.top + ph - (g / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = "#64748b"; ctx.textAlign = "right";
+    ctx.fillText((max * g / 4).toFixed(0), pad.left - 6, y + 3);
+  }
+  const n = items.length || 1;
+  const bw = Math.min(40, (pw / n) * 0.55);
+  items.forEach((item, i) => {
+    const x = pad.left + (i + 0.5) * (pw / n) - bw / 2;
+    const h = (item.value / max) * ph;
+    const y = pad.top + ph - h;
+    ctx.fillStyle = "#2563eb";
+    ctx.fillRect(x, y, bw, h);
+    ctx.fillStyle = "#e2e8f0"; ctx.textAlign = "center";
+    ctx.fillText(String(item.label), pad.left + (i + 0.5) * (pw / n), H - 10);
+    if (item.value) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText(Number(item.value) >= 1000 ? (Number(item.value) / 1000).toFixed(0) + "k" : String(Math.round(item.value)),
+        pad.left + (i + 0.5) * (pw / n), y - 4);
+    }
+  });
+}
+
 function drawLines(canvas, months, series) {
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 600;
