@@ -1,0 +1,58 @@
+[
+  {
+    "id": "so-market-share",
+    "objective": "Grow AKIJ Ready Mix market share to 15% by June 2027",
+    "business_rationale": "Competitive ready-mix market; AKIJ currently ~13-15% share vs Shah/Crown/NDE",
+    "strategic_pillar": "pillar-market",
+    "owner": "Managing Director",
+    "weight": 30,
+    "period": "2026-2027",
+    "kpi": "Market Share",
+    "initiative": "init-share-growth",
+    "budget": "brand_budget:2026-2027:ATL",
+    "linked_source": "market_share",
+    "health": null
+  },
+  {
+    "id": "so-revenue",
+    "objective": "Deliver FY 2026-27 net sales of BDT 4.5B at 20%+ EBITDA",
+    "business_rationale": "Finance budget FY26-27 projects rising volume/rate and improved margin",
+    "strategic_pillar": "pillar-commercial",
+    "owner": "CFO",
+    "weight": 30,
+    "period": "2026-2027",
+    "kpi": "Revenue Growth",
+    "initiative": "init-commercial",
+    "budget": "finance_budget:2026-2027",
+    "linked_source": "finance_budget",
+    "health": null
+  },
+  {
+    "id": "so-brand",
+    "objective": "Build brand preference through integrated ATL/BTL/digital presence",
+    "business_rationale": "Brand budget BDT 25.9M across ATL/Digital/BTL/OOH/Printing in FY26-27",
+    "strategic_pillar": "pillar-brand",
+    "owner": "Head of Brand & Marketing",
+    "weight": 20,
+    "period": "2026-2027",
+    "kpi": "Brand Health Score",
+    "initiative": "init-brand-campaigns",
+    "budget": "brand_budget:2026-2027",
+    "linked_source": "brand_budget",
+    "health": null
+  },
+  {
+    "id": "so-mtd-sales",
+    "objective": "Achieve monthly sales targets (Aug-26 target 1.34M CFT)",
+    "business_rationale": "MTD sales statement reconciles sales vs target at employee/project level",
+    "strategic_pillar": "pillar-commercial",
+    "owner": "Head of Sales",
+    "weight": 20,
+    "period": "2026-08",
+    "kpi": "Sales Target Achievement",
+    "initiative": "init-sales-execution",
+    "budget": null,
+    "linked_source": "sales_achievement",
+    "health": null
+  }
+]

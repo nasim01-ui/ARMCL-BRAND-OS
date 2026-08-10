@@ -41,6 +41,7 @@ from urllib.parse import urlparse
 import market_fetch
 import canonical
 import sync_sheets
+import strategy
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -457,6 +458,15 @@ class Handler(BaseHTTPRequestHandler):
             return
         if p == "/api/sources":
             self._json(canonical.source_registry())
+            return
+        if p == "/api/strategy":
+            self._json(strategy.strategy_payload())
+            return
+        if p == "/api/strategy-health":
+            self._json(strategy.compute_health())
+            return
+        if p == "/api/strategy-map":
+            self._json(strategy.strategy_map())
             return
         if p == "/api/data-health":
             try:

@@ -1,0 +1,63 @@
+[
+  {
+    "id": "init-share-growth",
+    "name": "Market Share Growth Program",
+    "objective_id": "so-market-share",
+    "description": "Win share through targeted ATL/OOH and competitor response",
+    "owner": "Brand Team",
+    "campaigns": [
+      "cmp-billboard-atl"
+    ],
+    "kpis": [
+      "Market Share"
+    ]
+  },
+  {
+    "id": "init-commercial",
+    "name": "Commercial Conversion Engine",
+    "objective_id": "so-revenue",
+    "description": "Convert project pipeline into orders and grow volume/revenue",
+    "owner": "Sales",
+    "campaigns": [],
+    "kpis": [
+      "Revenue Growth"
+    ]
+  },
+  {
+    "id": "init-brand-campaigns",
+    "name": "Integrated Brand Campaigns",
+    "objective_id": "so-brand",
+    "description": "ATL + Digital + BTL campaign execution within brand budget",
+    "owner": "Marketing Ops",
+    "campaigns": [
+      "cmp-social-launch",
+      "cmp-email-spring"
+    ],
+    "kpis": [
+      "Brand Health Score",
+      "Campaign ROI"
+    ]
+  },
+  {
+    "id": "init-sales-execution",
+    "name": "Sales Target Execution",
+    "objective_id": "so-mtd-sales",
+    "description": "Hit monthly sales targets across sales force and projects",
+    "owner": "Head of Sales",
+    "campaigns": [],
+    "kpis": [
+      "Sales Target Achievement"
+    ]
+  },
+  {
+    "id": "init-dealer-network",
+    "name": "Dealer Network Expansion",
+    "objective_id": "so-revenue",
+    "description": "Expand and activate dealer network in Dhaka & Chattogram",
+    "owner": "Commercial",
+    "campaigns": [],
+    "kpis": [
+      "Revenue Growth"
+    ]
+  }
+]

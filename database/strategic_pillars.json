@@ -1,0 +1,49 @@
+[
+  {
+    "id": "pillar-brand",
+    "name": "Brand Leadership",
+    "weight": 25,
+    "objective": "Build AKIJ Ready Mix as the preferred premium brand in ready-mix",
+    "budget_types": [
+      "ATL",
+      "BTL",
+      "OOH",
+      "Gifts & Printing"
+    ]
+  },
+  {
+    "id": "pillar-demand",
+    "name": "Demand Generation & Digital",
+    "weight": 25,
+    "objective": "Drive qualified project demand through digital and channel programs",
+    "budget_types": [
+      "Digital"
+    ]
+  },
+  {
+    "id": "pillar-commercial",
+    "name": "Commercial & Dealer Network",
+    "weight": 20,
+    "objective": "Expand dealer network and convert project pipeline to orders",
+    "budget_types": [
+      "BTL"
+    ]
+  },
+  {
+    "id": "pillar-market",
+    "name": "Market Share Growth",
+    "weight": 20,
+    "objective": "Grow ready-mix market share and outperform key competitors",
+    "budget_types": [
+      "ATL",
+      "OOH"
+    ]
+  },
+  {
+    "id": "pillar-operations",
+    "name": "Operational Excellence & Delivery",
+    "weight": 10,
+    "objective": "Ensure reliable dispatch, delivery and quality to protect brand promise",
+    "budget_types": []
+  }
+]

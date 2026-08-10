@@ -207,6 +207,24 @@ def api_brand_budget():
     return {"items": sync_sheets._read_store("brand_budget")}
 
 
+def api_strategy():
+    import strategy
+
+    return strategy.strategy_payload()
+
+
+def api_strategy_health():
+    import strategy
+
+    return strategy.compute_health()
+
+
+def api_strategy_map():
+    import strategy
+
+    return strategy.strategy_map()
+
+
 APP_API = {
     "/api/session": api_session,
     "/api/canonical": api_canonical,
@@ -214,6 +232,9 @@ APP_API = {
     "/api/data-health": api_data_health,
     "/api/finance-budget": api_finance_budget,
     "/api/brand-budget": api_brand_budget,
+    "/api/strategy": api_strategy,
+    "/api/strategy-health": api_strategy_health,
+    "/api/strategy-map": api_strategy_map,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,

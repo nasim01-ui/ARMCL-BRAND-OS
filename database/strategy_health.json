@@ -1,0 +1,43 @@
+{
+  "health": 64.7,
+  "grade": "Attention",
+  "components": [
+    {
+      "dimension": "Strategic KPI Achievement",
+      "score": 72.0,
+      "data": [
+        "Revenue Growth",
+        "Market Share",
+        "Campaign ROI",
+        "Brand Health Score",
+        "Budget Utilization"
+      ],
+      "weight": 25
+    },
+    {
+      "dimension": "Market Share Performance",
+      "score": 53.9,
+      "latest_share_pct": 10.79,
+      "mo_m_change_pct": 21.92,
+      "weight": 20
+    },
+    {
+      "dimension": "Brand Budget Efficiency",
+      "score": 40.0,
+      "budget": 25907508.0,
+      "spend": 0,
+      "remaining": 25907508.0,
+      "utilization_pct": 0.0,
+      "weight": 20
+    },
+    {
+      "dimension": "Campaign Execution",
+      "score": 100.0,
+      "executed": 3,
+      "total": 3,
+      "weight": 15
+    }
+  ],
+  "computed_at": "2026-08-10T16:21:17",
+  "dimensions_with_data": 4
+}
