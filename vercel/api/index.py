@@ -225,6 +225,59 @@ def api_strategy_map():
     return strategy.strategy_map()
 
 
+def api_budget_center():
+    import budget_center
+
+    return budget_center.budget_center()
+
+
+def api_budget_utilization():
+    import budget_center
+
+    return budget_center.utilization()
+
+
+def api_evaluate():
+    import evaluate
+
+    return {"kpis": evaluate.evaluate()}
+
+
+def api_diagnosis():
+    import evaluate
+
+    return evaluate.diagnosis()
+
+
+def api_nba():
+    import nba
+
+    try:
+        limit = int(request.args.get("limit", 0)) or None
+    except (TypeError, ValueError):
+        limit = None
+    return nba.nba(limit=limit)
+
+
+def api_nba_why():
+    import nba
+
+    rec_id = request.view_args.get("rec_id", "")
+    return nba.why(rec_id)
+
+
+def api_action_center():
+    import nba
+
+    return nba.action_center()
+
+
+def api_commercial():
+    import commercial
+
+    return commercial.commercial_payload()
+
+
 APP_API = {
     "/api/session": api_session,
     "/api/canonical": api_canonical,
@@ -235,6 +288,13 @@ APP_API = {
     "/api/strategy": api_strategy,
     "/api/strategy-health": api_strategy_health,
     "/api/strategy-map": api_strategy_map,
+    "/api/budget-center": api_budget_center,
+    "/api/budget-utilization": api_budget_utilization,
+    "/api/evaluate": api_evaluate,
+    "/api/diagnosis": api_diagnosis,
+    "/api/nba": api_nba,
+    "/api/action-center": api_action_center,
+    "/api/commercial": api_commercial,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,
@@ -295,6 +355,13 @@ def api_logout_route():
     resp = jsonify({"ok": True, "message": "logged out"})
     resp.set_cookie(COOKIE_NAME, "", httponly=True, samesite="Lax", max_age=0, path="/")
     return resp
+
+
+@app.route("/api/nba/why/<rec_id>", methods=["GET"])
+def api_nba_why_route(rec_id):
+    import nba
+
+    return jsonify(nba.why(rec_id))
 
 
 @app.route("/api/<name>", methods=["GET"])

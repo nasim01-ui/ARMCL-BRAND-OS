@@ -42,6 +42,10 @@ import market_fetch
 import canonical
 import sync_sheets
 import strategy
+import budget_center
+import evaluate
+import nba
+import commercial
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -467,6 +471,36 @@ class Handler(BaseHTTPRequestHandler):
             return
         if p == "/api/strategy-map":
             self._json(strategy.strategy_map())
+            return
+        if p == "/api/budget-center":
+            self._json(budget_center.budget_center())
+            return
+        if p == "/api/budget-utilization":
+            self._json(budget_center.utilization())
+            return
+        if p == "/api/evaluate":
+            self._json({"kpis": evaluate.evaluate()})
+            return
+        if p == "/api/diagnosis":
+            self._json(evaluate.diagnosis())
+            return
+        if p == "/api/nba":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            try:
+                limit = int(qs.get("limit", 0)) or None
+            except ValueError:
+                limit = None
+            self._json(nba.nba(limit=limit))
+            return
+        if p.startswith("/api/nba/why/"):
+            rec_id = p[len("/api/nba/why/"):]
+            self._json(nba.why(rec_id))
+            return
+        if p == "/api/action-center":
+            self._json(nba.action_center())
+            return
+        if p == "/api/commercial":
+            self._json(commercial.commercial_payload())
             return
         if p == "/api/data-health":
             try:
