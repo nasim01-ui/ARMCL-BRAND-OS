@@ -192,12 +192,18 @@ function badge(status) {
 /* ================= DASHBOARD ================= */
 let storeCache = {};
 async function loadDashboard() {
-  const o = await api("/api/overview");
-  const t = o.today || {}, w = o.week || {}, m = o.month || {};
   const el = (id) => document.getElementById(id);
-  el("dash-rev-today").textContent = fmtBDT(t.value);
-  el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
-  el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
+
+  // fire all dashboard data requests in parallel so slow DWH calls don't block the UI
+  const [o, rev] = await Promise.all([
+    api("/api/overview"),
+    api("/api/monthly-revenue"),
+  ]);
+
+  const t = o.today || {}, w = o.week || {}, m = o.month || {};
+  if (el("dash-rev-today")) el("dash-rev-today").textContent = fmtBDT(t.value);
+  if (el("dash-sales-today")) el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
+  if (el("dash-rev-mtd")) el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
 
   let target = 55000, achieved = m.volume || 0, ach = 0, achLabel = "";
   if (o.mtd_sales != null) {
@@ -206,24 +212,27 @@ async function loadDashboard() {
     achLabel = " sheet";
   }
   ach = target ? Math.round(achieved * 100 / target) : 0;
-  el("dash-target").textContent = ach + "%";            // real target achievement
-  el("dash-share").textContent = await akijShareLabel();
-  el("dash-health").textContent = "94%";             // brand health proxy
+  if (el("dash-target")) el("dash-target").textContent = ach + "%";
+  if (el("dash-share")) el("dash-share").textContent = await akijShareLabel();
+  if (el("dash-health")) el("dash-health").textContent = "94%";
 
-  const rev = await api("/api/monthly-revenue");
-  if (Array.isArray(rev)) drawBars(document.getElementById("revenue-chart"), rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
+  if (Array.isArray(rev)) {
+    const chartEl = document.getElementById("revenue-chart");
+    if (chartEl) drawBars(chartEl, rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
+  }
 
-  drawBars(document.getElementById("sales-target-chart"),
-    [{ label: "Target", value: target }, { label: "Achieved", value: achieved }]);
+  const chart2 = document.getElementById("sales-target-chart");
+  if (chart2) drawBars(chart2, [{ label: "Target", value: target }, { label: "Achieved", value: achieved }]);
 
-  document.getElementById("sales-perf").innerHTML = `
+  const perfEl = document.getElementById("sales-perf");
+  if (perfEl) perfEl.innerHTML = `
     <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">${fmt.format(target)} CFT${achLabel ? " (sheet)" : ""}</span></div>
     <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(achieved)} CFT${achLabel ? " (statement MTD)" : ""}</span></div>
     <div class="summary-row"><span class="lbl">Completion</span><span class="val">${o.achievement_pct != null ? o.achievement_pct.toFixed(1) + "%" : ach + "%"}</span></div>`;
-  el("dash-target").textContent = (o.achievement_pct != null ? o.achievement_pct.toFixed(0) : ach) + "%";          // real target achievement
+  if (el("dash-target")) el("dash-target").textContent = (o.achievement_pct != null ? o.achievement_pct.toFixed(0) : ach) + "%";
 
-  await loadMiniMarket();
-  await loadTasks();
+  loadMiniMarket();
+  loadTasks();
   loadInsights();
 }
 
