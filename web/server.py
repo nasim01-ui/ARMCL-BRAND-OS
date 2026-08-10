@@ -39,6 +39,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import market_fetch
+import canonical
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -432,6 +433,15 @@ class Handler(BaseHTTPRequestHandler):
             tok = _cookie_token_from_headers(self.headers) or self.headers.get("Authorization", "")[len("Bearer "):]
             data = parse_token(tok) or {}
             self._json({"authenticated": True, "user": "custodian", "exp": data.get("exp")})
+            return
+        if p == "/api/canonical":
+            self._json({
+                "entities": canonical.CANONICAL_ENTITIES,
+                "mappings": canonical.SOURCE_MAPPINGS,
+            })
+            return
+        if p == "/api/sources":
+            self._json(canonical.source_registry())
             return
         if p == "/api/overview":
             now = datetime.now()

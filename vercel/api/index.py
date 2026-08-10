@@ -174,8 +174,25 @@ def api_session():
     return jsonify({"authenticated": True, "user": "custodian", "exp": data.get("exp")})
 
 
+def api_canonical():
+    import canonical
+
+    return {
+        "entities": canonical.CANONICAL_ENTITIES,
+        "mappings": canonical.SOURCE_MAPPINGS,
+    }
+
+
+def api_sources():
+    import canonical
+
+    return canonical.source_registry()
+
+
 APP_API = {
     "/api/session": api_session,
+    "/api/canonical": api_canonical,
+    "/api/sources": api_sources,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,
