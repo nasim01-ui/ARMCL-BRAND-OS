@@ -1,0 +1,109 @@
+[
+  {
+    "id": "sync:finance_budget:20260810161326",
+    "source": "finance_budget",
+    "status": "ok",
+    "imported": 12,
+    "merge": {
+      "added": 12,
+      "modified": 0,
+      "removed": 0,
+      "total": 12,
+      "ids_added": [
+        "finance_budget:2026-07",
+        "finance_budget:2026-08",
+        "finance_budget:2026-09",
+        "finance_budget:2026-10",
+        "finance_budget:2026-11",
+        "finance_budget:2026-12",
+        "finance_budget:2026-01",
+        "finance_budget:2026-02",
+        "finance_budget:2026-03",
+        "finance_budget:2026-04",
+        "finance_budget:2026-05",
+        "finance_budget:2026-06"
+      ],
+      "ids_modified": [],
+      "ids_removed": []
+    },
+    "error": null,
+    "synced_at": "2026-08-10T16:13:26"
+  },
+  {
+    "id": "sync:brand_budget:20260810161344",
+    "source": "brand_budget",
+    "status": "ok",
+    "imported": 6,
+    "merge": {
+      "added": 6,
+      "modified": 0,
+      "removed": 0,
+      "total": 6,
+      "ids_added": [
+        "brand_budget:2026-2027:ATL",
+        "brand_budget:2026-2027:Digital",
+        "brand_budget:2026-2027:BTL",
+        "brand_budget:2026-2027:OOH",
+        "brand_budget:2026-2027:Gifts & Printing",
+        "brand_budget:2026-2027:Sales in CFT"
+      ],
+      "ids_modified": [],
+      "ids_removed": []
+    },
+    "error": null,
+    "synced_at": "2026-08-10T16:13:44"
+  },
+  {
+    "id": "sync:brand_budget:20260810161418",
+    "source": "brand_budget",
+    "status": "ok",
+    "imported": 5,
+    "merge": {
+      "added": 0,
+      "modified": 0,
+      "removed": 1,
+      "total": 5,
+      "ids_added": [],
+      "ids_modified": [],
+      "ids_removed": [
+        "brand_budget:2026-2027:Sales in CFT"
+      ]
+    },
+    "error": null,
+    "synced_at": "2026-08-10T16:14:18"
+  },
+  {
+    "id": "sync:finance_budget:20260810161609",
+    "source": "finance_budget",
+    "status": "ok",
+    "imported": 12,
+    "merge": {
+      "added": 0,
+      "modified": 0,
+      "removed": 0,
+      "total": 12,
+      "ids_added": [],
+      "ids_modified": [],
+      "ids_removed": []
+    },
+    "error": null,
+    "synced_at": "2026-08-10T16:16:09"
+  },
+  {
+    "id": "sync:brand_budget:20260810161613",
+    "source": "brand_budget",
+    "status": "ok",
+    "imported": 5,
+    "merge": {
+      "added": 0,
+      "modified": 0,
+      "removed": 0,
+      "total": 5,
+      "ids_added": [],
+      "ids_modified": [],
+      "ids_removed": []
+    },
+    "error": null,
+    "synced_at": "2026-08-10T16:16:13"
+  }
+]

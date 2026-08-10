@@ -1,0 +1,98 @@
+[
+  {
+    "id": "finance_budget:2026-01",
+    "fiscal_year": "2026-2027",
+    "month": "2026-01",
+    "sales_qty_cft": 1835000.0,
+    "rate": 340.82,
+    "net_sales": 625404047.7
+  },
+  {
+    "id": "finance_budget:2026-02",
+    "fiscal_year": "2026-2027",
+    "month": "2026-02",
+    "sales_qty_cft": 1939000.0,
+    "rate": 340.82,
+    "net_sales": 660850009.1
+  },
+  {
+    "id": "finance_budget:2026-03",
+    "fiscal_year": "2026-2027",
+    "month": "2026-03",
+    "sales_qty_cft": 1135000.0,
+    "rate": 340.82,
+    "net_sales": 386831137.5
+  },
+  {
+    "id": "finance_budget:2026-04",
+    "fiscal_year": "2026-2027",
+    "month": "2026-04",
+    "sales_qty_cft": 2145000.0,
+    "rate": 340.82,
+    "net_sales": 731060521.6
+  },
+  {
+    "id": "finance_budget:2026-05",
+    "fiscal_year": "2026-2027",
+    "month": "2026-05",
+    "sales_qty_cft": 1285000.0,
+    "rate": 340.82,
+    "net_sales": 437955147.5
+  },
+  {
+    "id": "finance_budget:2026-06",
+    "fiscal_year": "2026-2027",
+    "month": "2026-06",
+    "sales_qty_cft": 1185000.0,
+    "rate": null,
+    "net_sales": 403873473.9
+  },
+  {
+    "id": "finance_budget:2026-07",
+    "fiscal_year": "2026-2027",
+    "month": "2026-07",
+    "sales_qty_cft": 1180000.0,
+    "rate": 330.34,
+    "net_sales": 389801200.0
+  },
+  {
+    "id": "finance_budget:2026-08",
+    "fiscal_year": "2026-2027",
+    "month": "2026-08",
+    "sales_qty_cft": 1230000.0,
+    "rate": 336.32,
+    "net_sales": 413669479.3
+  },
+  {
+    "id": "finance_budget:2026-09",
+    "fiscal_year": "2026-2027",
+    "month": "2026-09",
+    "sales_qty_cft": 1230000.0,
+    "rate": 336.32,
+    "net_sales": 413669929.4
+  },
+  {
+    "id": "finance_budget:2026-10",
+    "fiscal_year": "2026-2027",
+    "month": "2026-10",
+    "sales_qty_cft": 1280000.0,
+    "rate": 340.82,
+    "net_sales": 436247722.4
+  },
+  {
+    "id": "finance_budget:2026-11",
+    "fiscal_year": "2026-2027",
+    "month": "2026-11",
+    "sales_qty_cft": 1330000.0,
+    "rate": 340.82,
+    "net_sales": 453289141.8
+  },
+  {
+    "id": "finance_budget:2026-12",
+    "fiscal_year": "2026-2027",
+    "month": "2026-12",
+    "sales_qty_cft": 1426000.0,
+    "rate": 340.82,
+    "net_sales": 486008284.8
+  }
+]

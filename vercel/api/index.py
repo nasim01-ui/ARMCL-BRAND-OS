@@ -189,10 +189,31 @@ def api_sources():
     return canonical.source_registry()
 
 
+def api_data_health():
+    import sync_sheets
+
+    return {"status": sync_sheets.get_sync_status()}
+
+
+def api_finance_budget():
+    import sync_sheets
+
+    return {"items": sync_sheets._read_store("finance_budget")}
+
+
+def api_brand_budget():
+    import sync_sheets
+
+    return {"items": sync_sheets._read_store("brand_budget")}
+
+
 APP_API = {
     "/api/session": api_session,
     "/api/canonical": api_canonical,
     "/api/sources": api_sources,
+    "/api/data-health": api_data_health,
+    "/api/finance-budget": api_finance_budget,
+    "/api/brand-budget": api_brand_budget,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,
@@ -263,6 +284,23 @@ def api_get(name: str):
     if name in STORES:
         return jsonify(load_store(name))
     return jsonify({"error": "unknown api"}), 404
+
+
+@app.route("/api/sync", methods=["POST"])
+def api_sync():
+    import sync_sheets
+
+    body = request.get_json(silent=True) or {}
+    source = body.get("source")
+    force = bool(body.get("force"))
+    try:
+        if source:
+            result = sync_sheets.sync_source(source, force=force)
+        else:
+            result = sync_sheets.sync_all(force=force)
+        return jsonify({"ok": True, "result": result})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/api/<name>", methods=["POST"])

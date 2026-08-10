@@ -1,0 +1,72 @@
+[
+  {
+    "id": "brand_budget:2026-2027:ATL",
+    "fiscal_year": "2026-2027",
+    "activity_type": "ATL",
+    "q1": 900000.0,
+    "q2": 900000.0,
+    "q3": 900000.0,
+    "q4": 900000.0,
+    "annual_total": 3600000.0,
+    "pct": 0.14,
+    "till_date_cost": null,
+    "remaining_budget": 3600000.0,
+    "status": "approved"
+  },
+  {
+    "id": "brand_budget:2026-2027:BTL",
+    "fiscal_year": "2026-2027",
+    "activity_type": "BTL",
+    "q1": 200000.0,
+    "q2": 200000.0,
+    "q3": 550000.0,
+    "q4": 2500000.0,
+    "annual_total": 3450000.0,
+    "pct": 0.13,
+    "till_date_cost": null,
+    "remaining_budget": 3450000.0,
+    "status": "approved"
+  },
+  {
+    "id": "brand_budget:2026-2027:Digital",
+    "fiscal_year": "2026-2027",
+    "activity_type": "Digital",
+    "q1": 605000.0,
+    "q2": 1255000.0,
+    "q3": 2660000.0,
+    "q4": 1610000.0,
+    "annual_total": 6130000.0,
+    "pct": 0.24,
+    "till_date_cost": null,
+    "remaining_budget": 6130000.0,
+    "status": "approved"
+  },
+  {
+    "id": "brand_budget:2026-2027:Gifts & Printing",
+    "fiscal_year": "2026-2027",
+    "activity_type": "Gifts & Printing",
+    "q1": 150000.0,
+    "q2": 700000.0,
+    "q3": 2917500.0,
+    "q4": 1060000.0,
+    "annual_total": 4827500.0,
+    "pct": 0.19,
+    "till_date_cost": null,
+    "remaining_budget": 4827500.0,
+    "status": "approved"
+  },
+  {
+    "id": "brand_budget:2026-2027:OOH",
+    "fiscal_year": "2026-2027",
+    "activity_type": "OOH",
+    "q1": 350008.0,
+    "q2": 2000000.0,
+    "q3": 4700000.0,
+    "q4": 850000.0,
+    "annual_total": 7900008.0,
+    "pct": 0.3,
+    "till_date_cost": null,
+    "remaining_budget": 7900008.0,
+    "status": "approved"
+  }
+]

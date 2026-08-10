@@ -40,6 +40,7 @@ from urllib.parse import urlparse
 
 import market_fetch
 import canonical
+import sync_sheets
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -76,7 +77,8 @@ DB_CONFIG = {
 }
 
 STORES = ("campaigns", "competitors", "visibility", "visits", "kpis", "market_share",
-          "projects", "dealers", "customers", "assets", "approvals", "tasks", "creative")
+          "projects", "dealers", "customers", "assets", "approvals", "tasks", "creative",
+          "sync_log")
 
 
 def pymssql():
@@ -417,6 +419,19 @@ class Handler(BaseHTTPRequestHandler):
         if not authorized(self):
             self._json({"error": "unauthorized"}, status=401)
             return
+        if p == "/api/sync":
+            body = self._read_json()
+            source = (body or {}).get("source")
+            force = bool((body or {}).get("force"))
+            try:
+                if source:
+                    result = sync_sheets.sync_source(source, force=force)
+                else:
+                    result = sync_sheets.sync_all(force=force)
+                self._json({"ok": True, "result": result})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)}, status=500)
+            return
         store = p[len("/api/"):].split("/")[0]
         if store not in STORES:
             self._json({"ok": False, "error": f"unknown store {store}"}, status=404)
@@ -442,6 +457,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         if p == "/api/sources":
             self._json(canonical.source_registry())
+            return
+        if p == "/api/data-health":
+            try:
+                self._json({"status": sync_sheets.get_sync_status()})
+            except Exception as e:
+                self._json({"error": str(e)}, status=500)
+            return
+        if p == "/api/finance-budget":
+            self._json({"items": sync_sheets._read_store("finance_budget")})
+            return
+        if p == "/api/brand-budget":
+            self._json({"items": sync_sheets._read_store("brand_budget")})
             return
         if p == "/api/overview":
             now = datetime.now()
