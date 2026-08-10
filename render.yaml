@@ -26,3 +26,14 @@ services:
         value: 1NDWiW6q1PuykQ2uuNLcMuyU_90tVSBqLARlQxiaPgss
       - key: MARKET_SHEET_GID
         value: 1519626691
+      # BrandOS auth + sync
+      - key: BRANDOS_PASSWORD
+        sync: false   # set in Render dashboard (login password)
+      - key: BRANDOS_SECRET
+        sync: false   # set in Render dashboard (random HMAC secret)
+      - key: BRANDOS_TOKEN_TTL
+        value: "3600"
+      - key: BRANDOS_COOKIE_SECURE
+        value: "true"
+      - key: BRANDOS_SYNC_TTL
+        value: "3600"
