@@ -4,10 +4,15 @@ Serves a single-page dashboard tracking all skill data (sales/revenue from the
 DWH, plus campaign, competitor, visibility, market-visit and KPI stores kept as
 JSON under database/). Pure standard-library server; edit-friendly JSON stores.
 
-Endpoints (GET):
-  /                 -> dashboard HTML (web/index.html)
-  /web/<file>       -> static assets (css, js)
-  /api/overview     -> today/week/month deliveries, volume, net value
+Endpoints:
+  GET  /login        -> login page (redirect to /dashboard if already authed)
+  GET  /dashboard    -> app shell (redirect to /login if not authed; session cookie required)
+  GET  /             -> redirect to /login or /dashboard
+  POST /api/login    -> {password} -> {ok,token} + Set-Cookie (HttpOnly session)
+  POST /api/logout   -> clears session cookie
+  GET  /api/session  -> {authenticated,user,exp} (verifies token/cookie)
+  GET  /api/overview -> today/week/month deliveries, volume, net value + MTD sales vs sheet
+  /api/* (other)     -> protected JSON (bearer token or session cookie)
   /api/sales-by-zone    -> today's sales grouped by transport zone
   /api/sales-by-dealer  -> today's top 10 dealers
   /api/monthly-revenue  -> last 12 months revenue
@@ -22,9 +27,12 @@ POST:
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
+import secrets
 import sys
+import time
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -38,6 +46,10 @@ DATA_DIR = BASE_DIR / "database"
 SKILL_FILE = BASE_DIR / "skills" / "brand_custodian.md"
 
 ARMCL_UNIT_ID = 175  # Akij Cement - Ready Mix? -> actual ARMCL unit id
+
+LOGIN_PASSWORD = os.getenv("BRANDOS_PASSWORD", "123456")
+TOKEN_SECRET = os.getenv("BRANDOS_SECRET", "brandos-secret-change-me")
+TOKEN_TTL = int(os.getenv("BRANDOS_TOKEN_TTL", "3600"))
 
 
 def _load_env() -> None:
@@ -206,14 +218,96 @@ def upsert_store(name: str, record: dict) -> list[dict]:
 
 
 # --------------------------------------------------------------------------
+# Auth (stateless HMAC session token + HttpOnly session cookie)
+# --------------------------------------------------------------------------
+COOKIE_NAME = "brandos_session"
+
+
+def _b64url(b: bytes) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(b).rstrip(b"=").decode("ascii")
+
+
+def _b64url_decode(s: str) -> bytes:
+    import base64
+
+    pad = "=" * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s + pad)
+
+
+def make_token(payload: dict | None = None) -> str:
+    """Issue a signed session token. Payload {exp} defaults to now+TTL."""
+    p = payload or {}
+    p["exp"] = int(time.time()) + TOKEN_TTL
+    body = json.dumps(p, separators=(",", ":"), sort_keys=True).encode()
+    sig = hmac.new(TOKEN_SECRET.encode(), body, "sha256").hexdigest()
+    return _b64url(body) + "." + sig
+
+
+def parse_token(token: str) -> dict | None:
+    try:
+        payload_b64, sig = token.split(".", 1)
+        body = _b64url_decode(payload_b64)
+        expected = hmac.new(TOKEN_SECRET.encode(), body, "sha256").hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        data = json.loads(body)
+        if int(data.get("exp", 0)) < int(time.time()):
+            return None
+        return data
+    except Exception:
+        return None
+
+
+def token_valid(token: str) -> bool:
+    return parse_token(token) is not None
+
+
+def _cookie_header_value(token: str, max_age: int = TOKEN_TTL) -> str:
+    flag = "Secure;" if os.getenv("BRANDOS_COOKIE_SECURE", "").lower() in ("1", "true") else ""
+    parts = f"{COOKIE_NAME}={token}; HttpOnly; SameSite=Lax; Max-Age={max_age}; Path=/; {flag}".strip()
+    return parts
+
+
+def _clear_cookie_value() -> str:
+    return f"{COOKIE_NAME}=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/"
+
+
+def _cookie_token_from_headers(headers) -> str | None:
+    raw = headers.get("Cookie", "")
+    for pair in raw.split(";"):
+        k, _, v = pair.strip().partition("=")
+        if k == COOKIE_NAME and v:
+            return v
+    return None
+
+
+def authorized(self) -> bool:
+    """True if request carries a valid bearer token or a valid session cookie."""
+    auth = self.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return token_valid(auth[len("Bearer "):])
+    tok = _cookie_token_from_headers(self.headers)
+    return bool(tok) and token_valid(tok)
+
+
+# --------------------------------------------------------------------------
+# Auth routes
+# --------------------------------------------------------------------------
+def login_ok(body: dict) -> bool:
+    return isinstance(body, dict) and str(body.get("password", "")) == LOGIN_PASSWORD
+
+
+# --------------------------------------------------------------------------
 # HTTP handler
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     server_version = "SkillDashboard/1.0"
 
     # -- helpers ----------------------------------------------------------
-    def _write(self, body: bytes, ctype="application/json; charset=utf-8"):
-        self.send_response(200)
+    def _write(self, body: bytes, ctype="application/json; charset=utf-8", status=200):
+        self.send_response(status)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
@@ -222,7 +316,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _json(self, obj, status=200):
         body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
-        self._write(body)
+        self._write(body, status=status)
 
     def _read_json(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -239,24 +333,35 @@ class Handler(BaseHTTPRequestHandler):
         p = parsed.path
         if p.startswith("/api/"):
             self._api(p)
-        elif p in ("/", "/index.html"):
-            self._static("index.html")
-        else:
-            self._static(p.lstrip("/"))
+            return
+        # public auth pages
+        if p in ("/login", "/login/"):
+            if authorized(self):
+                self._redirect("/dashboard")
+            else:
+                self._static("login.html")
+            return
+        if p in ("/dashboard", "/dashboard/"):
+            if authorized(self):
+                self._static("dashboard.html")
+            else:
+                self._redirect("/login")
+            return
+        if p in ("/", "/index.html"):
+            # redirect to the right shell; never serve the combined page directly
+            if authorized(self):
+                self._redirect("/dashboard")
+            else:
+                self._redirect("/login")
+            return
+        self._static(p.lstrip("/"))
 
-    def do_POST(self):
-        parsed = urlparse(self.path)
-        p = parsed.path
-        if not p.startswith("/api/"):
-            self._json({"ok": False, "error": "unknown route"}, status=404)
-            return
-        store = p[len("/api/"):].split("/")[0]
-        if store not in STORES:
-            self._json({"ok": False, "error": f"unknown store {store}"}, status=404)
-            return
-        record = self._read_json()
-        items = upsert_store(store, record)
-        self._json({"ok": True, "items": items})
+    def _redirect(self, location: str) -> None:
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
 
     def _static(self, rel: str):
         rel = rel.replace("\\", "/").lstrip("/")
@@ -271,21 +376,81 @@ class Handler(BaseHTTPRequestHandler):
             ".html": "text/html; charset=utf-8",
             ".css": "text/css; charset=utf-8",
             ".js": "text/javascript; charset=utf-8",
+            ".png": "image/png",
+            ".svg": "image/svg+xml",
         }.get(fp.suffix, "application/octet-stream")
         self._write(fp.read_bytes(), ctype)
 
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        p = parsed.path
+        if not p.startswith("/api/"):
+            self._json({"ok": False, "error": "unknown route"}, status=404)
+            return
+        if p == "/api/login":
+            body = self._read_json()
+            ok = isinstance(body, dict) and str(body.get("password", "")) == LOGIN_PASSWORD
+            if ok:
+                token = make_token()
+                payload = json.dumps({"ok": True, "token": token}, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(payload)))
+                self.send_header("Set-Cookie", _cookie_header_value(token))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+            self._json({"ok": False, "error": "invalid password"}, status=401)
+            return
+        if p == "/api/logout":
+            payload = json.dumps({"ok": True, "message": "logged out"}, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Set-Cookie", _clear_cookie_value())
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+        if not authorized(self):
+            self._json({"error": "unauthorized"}, status=401)
+            return
+        store = p[len("/api/"):].split("/")[0]
+        if store not in STORES:
+            self._json({"ok": False, "error": f"unknown store {store}"}, status=404)
+            return
+        record = self._read_json()
+        items = upsert_store(store, record)
+        self._json({"ok": True, "items": items})
+
     def _api(self, p):
+        if not authorized(self):
+            self._json({"error": "unauthorized"}, status=401)
+            return
+        if p == "/api/session":
+            tok = _cookie_token_from_headers(self.headers) or self.headers.get("Authorization", "")[len("Bearer "):]
+            data = parse_token(tok) or {}
+            self._json({"authenticated": True, "user": "custodian", "exp": data.get("exp")})
+            return
         if p == "/api/overview":
             now = datetime.now()
             today = now.replace(hour=0, minute=0, second=0, microsecond=0)
             week_start = (today - timedelta(days=today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
             month_start = today.replace(day=1)
             nxt_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+            sales_status = market_fetch.get_sales_status(force=False)
             self._json({
                 "today": totals_between(today, today + timedelta(days=1)),
                 "week": totals_between(week_start, week_start + timedelta(days=7)),
                 "month": totals_between(month_start, nxt_month),
                 "report_date": now.strftime("%Y-%m-%d %H:%M"),
+                "mtd_sales": sales_status.get("mtd_sales"),
+                "monthly_target": sales_status.get("monthly_target"),
+                "achievement_pct": sales_status.get("achievement_pct"),
+                "sales_status_source": sales_status.get("source"),
+                "sales_status_month": sales_status.get("month"),
+                "sales_status_updated_at": sales_status.get("updated_at"),
             })
             return
         if p == "/api/sales-by-zone":
@@ -324,10 +489,10 @@ class Handler(BaseHTTPRequestHandler):
             qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
             force = qs.get("refresh") == "1"
             self._json(market_fetch.get_market_trend(force=force))
-        elif p == "/api/market-trend":
+        elif p == "/api/sales-status":
             qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
             force = qs.get("refresh") == "1"
-            self._json(market_fetch.get_market_trend(force=force))
+            self._json(market_fetch.get_sales_status(force=force))
         elif p == "/api/market_share":
             self._json(load_store("market_share"))
         elif p == "/api/insights":

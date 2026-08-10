@@ -5,33 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AKIJ Ready Mix BrandOS</title>
 <link rel="stylesheet" href="/web/style.css" />
+<script>
+// Hard guard: never reveal the dashboard if no session token is present in
+// sessionStorage. The server already protects /dashboard via the session
+// cookie; this script stops any cached/back-navigation render flash.
+(function () {
+  var tok = sessionStorage.getItem("brandos_token");
+  if (!tok) {
+    location.replace("/login");
+  }
+})();
+</script>
 </head>
 <body>
 
-<!-- ============ LOGIN ============ -->
-<div class="login-screen" id="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <span class="logo big">ARM</span>
-      <h1>AKIJ Ready Mix</h1>
-      <h2>BrandOS</h2>
-      <p class="login-tag">AI Powered Business Command Center</p>
-      <p class="login-sub">One operating system for brand, sales, market intelligence &amp; growth</p>
-    </div>
-    <form id="login-form" class="login-form">
-      <label>Email Address</label>
-      <input type="email" id="login-email" placeholder="you@akij.net" value="custodian@akij.net" />
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="password" />
-      <div id="login-error" class="login-error" hidden></div>
-      <button type="submit" class="btn login-btn">LOGIN</button>
-      <a href="#" class="forgot">Forgot Password?</a>
-    </form>
+<!-- Loading splash shown until the session is verified client-side -->
+<div class="loader-screen" id="loader-screen">
+  <div class="login-card" style="text-align:center">
+    <span class="logo big">ARM</span>
+    <h2>BrandOS</h2>
+    <p class="login-sub">Verifying session...</p>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
-<div id="app" class="app" hidden>
+<div id="app" class="app">
 
   <!-- TOP BAR -->
   <header class="topbar">
@@ -48,6 +46,7 @@
       <button class="icon-btn" id="alert-bell" title="Alerts">🔔 <span class="dot" id="alert-count">12</span></button>
       <button class="icon-btn" id="open-ai" title="AI Assistant">🤖</button>
       <button class="avatar" id="profile-btn" title="Profile">👤 <span>Brand Custodian</span></button>
+      <button class="icon-btn" id="logout-btn" title="Logout">🚪</button>
     </div>
   </header>
 
@@ -349,7 +348,7 @@
 </div>
 
 <!-- Bottom mobile nav -->
-<nav class="mobile-nav" id="mobile-nav" hidden>
+<nav class="mobile-nav" id="mobile-nav">
   <button class="menu-item" data-page="dashboard">Home</button>
   <button class="menu-item" data-page="market">Market</button>
   <button class="menu-item" data-page="campaigns">Campaigns</button>

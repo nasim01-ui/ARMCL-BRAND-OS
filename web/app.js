@@ -1,29 +1,98 @@
-/* BrandOS Dashboard - frontend logic */
+/* BrandOS Dashboard - frontend logic + session bootstrap */
+
+function on(id) { return document.getElementById(id); }
+const isDashboard = !!on("app");
+const isLogin = !!on("login-form");
+
+function clientAuthed() { return sessionStorage.getItem("brandos_token") !== null; }
+
+/* ---- logout ---- */
+function doLogout() {
+  sessionStorage.removeItem("brandos_token");
+  sessionStorage.removeItem("brandos_auth");
+  api("/api/logout", { method: "POST" }).catch(() => {});
+  location.replace("/login");
+}
+
+/* ---- login form ---- */
+if (isLogin) {
+  on("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pass = on("login-pass").value;
+    const res = await api("/api/login", { method: "POST", body: JSON.stringify({ password: pass }) });
+    if (res.ok && res.token) {
+      sessionStorage.setItem("brandos_token", res.token);
+      sessionStorage.setItem("brandos_auth", "true");
+      location.replace("/dashboard");
+    } else {
+      const errEl = on("login-error");
+      if (errEl) { errEl.textContent = res.error || "Invalid password"; errEl.hidden = false; }
+    }
+  });
+  if (clientAuthed()) location.replace("/dashboard");
+}
+
+/* ---- dashboard ---- */
+async function bootstrapDashboard() {
+  const loader = on("loader-screen");
+  if (!clientAuthed()) {
+    location.replace("/login");
+    return;
+  }
+  try {
+    const s = await api("/api/session");
+    if (!s || s.error || !s.authenticated) {
+      location.replace("/login");
+      return;
+    }
+  } catch (_) {
+    location.replace("/login");
+    return;
+  }
+  if (loader) loader.style.display = "none";
+  if (on("app")) on("app").hidden = false;
+  sessionStorage.setItem("brandos_auth", "true");
+  init();
+}
+
+if (isDashboard) {
+  // bfcache / back-navigation protection
+  window.addEventListener("pageshow", (e) => { if (e.persisted && !clientAuthed()) location.replace("/login"); });
+
+  document.getElementById("menu-toggle").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.toggle("open");
+  });
+  document.getElementById("menu").addEventListener("click", (e) => {
+    const btn = e.target.closest(".menu-item");
+    if (!btn) return;
+    switchPage(btn.dataset.page);
+  });
+  document.getElementById("mobile-nav").addEventListener("click", (e) => {
+    const btn = e.target.closest(".menu-item");
+    if (btn) switchPage(btn.dataset.page);
+  });
+  on("logout-btn") && on("logout-btn").addEventListener("click", doLogout);
+  bootstrapDashboard();
+}
 
 const fmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 const fmtBDT = (n) => "৳" + fmt.format(n || 0);
 const fmtPct = (n) => (Number(n) || 0).toFixed(1) + "%";
 
 async function api(path, opts = {}) {
+  const token = sessionStorage.getItem("brandos_token");
+  const headers = opts.headers || {};
+  if (token) headers["Authorization"] = "Bearer " + token;
+  opts.headers = headers;
   const res = await fetch(path, opts);
+  if (res.status === 401) {
+    sessionStorage.removeItem("brandos_auth");
+    sessionStorage.removeItem("brandos_token");
+    if (!isLogin) location.replace("/login");
+    return { error: "unauthorized" };
+  }
   return res.json();
 }
-
-/* ---------- login ---------- */
-function checkLogin() {
-  const loggedIn = sessionStorage.getItem("brandos_auth") === "true";
-  document.getElementById("login-screen").hidden = loggedIn;
-  document.getElementById("app").hidden = !loggedIn;
-  if (loggedIn) init();
-}
-document.getElementById("login-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const email = document.getElementById("login-email").value;
-  if (email && document.getElementById("login-pass").value) {
-    sessionStorage.setItem("brandos_auth", "true");
-    checkLogin();
-  }
-});
 
 /* ---------- topbar ---------- */
 function todayDate() {
@@ -35,20 +104,6 @@ function todayDate() {
 /* ---------- page routing ---------- */
 const PAGES = ["dashboard","revenue","sales","market","competitors","projects","dealers",
   "customers","campaigns","creative","governance","assets","field","budget","approval","reports","assistant","settings"];
-
-document.getElementById("menu-toggle").addEventListener("click", () => {
-  document.getElementById("sidebar").classList.toggle("open");
-});
-
-document.getElementById("menu").addEventListener("click", (e) => {
-  const btn = e.target.closest(".menu-item");
-  if (!btn) return;
-  switchPage(btn.dataset.page);
-});
-document.getElementById("mobile-nav").addEventListener("click", (e) => {
-  const btn = e.target.closest(".menu-item");
-  if (btn) switchPage(btn.dataset.page);
-});
 
 function switchPage(page) {
   document.querySelectorAll(".pane").forEach((p) => p.classList.remove("active"));
@@ -112,7 +167,15 @@ async function loadDashboard() {
   el("dash-rev-today").textContent = fmtBDT(t.value);
   el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
   el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
-  el("dash-target").textContent = "71%";            // placeholder vs target (add target source later)
+
+  let target = 55000, achieved = m.volume || 0, ach = 0, achLabel = "";
+  if (o.mtd_sales != null) {
+    target = o.monthly_target || target;
+    achieved = o.mtd_sales || achieved;
+    achLabel = " sheet";
+  }
+  ach = target ? Math.round(achieved * 100 / target) : 0;
+  el("dash-target").textContent = ach + "%";            // real target achievement
   el("dash-share").textContent = await akijShareLabel();
   el("dash-health").textContent = "94%";             // brand health proxy
 
@@ -120,14 +183,13 @@ async function loadDashboard() {
   if (Array.isArray(rev)) drawBars(document.getElementById("revenue-chart"), rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
 
   drawBars(document.getElementById("sales-target-chart"),
-    [{ label: "Target", value: 55000 }, { label: "Achieved", value: m.volume || 0 }]);
+    [{ label: "Target", value: target }, { label: "Achieved", value: achieved }]);
 
-  const ach = 55000 ? Math.round((m.volume || 0) * 100 / 55000) : 0;
   document.getElementById("sales-perf").innerHTML = `
-    <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">55,000 CFT</span></div>
-    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(m.volume || 0)} CFT</span></div>
-    <div class="summary-row"><span class="lbl">Completion</span><span class="val">${ach}%</span></div>`;
-  el("dash-target").textContent = ach + "%";          // real target achievement
+    <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">${fmt.format(target)} CFT${achLabel ? " (sheet)" : ""}</span></div>
+    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(achieved)} CFT${achLabel ? " (statement MTD)" : ""}</span></div>
+    <div class="summary-row"><span class="lbl">Completion</span><span class="val">${o.achievement_pct != null ? o.achievement_pct.toFixed(1) + "%" : ach + "%"}</span></div>`;
+  el("dash-target").textContent = (o.achievement_pct != null ? o.achievement_pct.toFixed(0) : ach) + "%";          // real target achievement
 
   await loadMiniMarket();
   await loadTasks();
@@ -207,7 +269,18 @@ async function loadSales() {
   const m = o.month || {}, t = o.today || {};
   document.getElementById("s-daily").textContent = fmt.format(t.volume) + " m³";
   document.getElementById("s-mtd").textContent = fmt.format(m.volume) + " m³";
-  document.getElementById("s-ach").textContent = "70%";                         // vs 55k CFT target (see below)
+
+  let achLabel = "70%";
+  if (o.achievement_pct != null) {
+    achLabel = o.achievement_pct.toFixed(1) + "%";
+    if (o.mtd_sales != null) achLabel += " (statement)";
+  }
+  document.getElementById("s-ach").textContent = achLabel;
+
+  const status = await api("/api/sales-status");
+  if (!status.error && status.mtd_sales != null) {
+    document.getElementById("s-mtd").textContent = fmt.format(status.mtd_sales) + " m³";
+  }
 
   const rev = await api("/api/monthly-revenue");
   if (Array.isArray(rev)) drawBars(document.getElementById("revenue-chart-s"), rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
@@ -674,4 +747,3 @@ function init() {
   loadPage("dashboard");
   window.addEventListener("resize", () => {});
 }
-checkLogin();
