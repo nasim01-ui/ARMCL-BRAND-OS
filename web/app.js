@@ -19,10 +19,12 @@ if (isLogin) {
   on("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const pass = on("login-pass").value;
-    const res = await api("/api/login", { method: "POST", body: JSON.stringify({ password: pass }) });
+    const role = (on("login-role") && on("login-role").value) || "md";
+    const res = await api("/api/login", { method: "POST", body: JSON.stringify({ password: pass, role: role }) });
     if (res.ok && res.token) {
       sessionStorage.setItem("brandos_token", res.token);
       sessionStorage.setItem("brandos_auth", "true");
+      sessionStorage.setItem("brandos_role", res.role || role);
       location.replace("/dashboard");
     } else {
       const errEl = on("login-error");
@@ -30,6 +32,33 @@ if (isLogin) {
     }
   });
   if (clientAuthed()) location.replace("/dashboard");
+}
+
+/* ---- role-based menu filtering (Phase 20 recommendation #3) ---- */
+const ROLE_PAGES = {
+  md: null, // full access
+  executive: null, // full access
+  marketing: ["dashboard","market","competitors","campaigns","creative","governance","assets","budget","approval","reports","assistant-page","settings"],
+  finance: ["dashboard","revenue","budget","approval","reports","assistant-page","settings"],
+  sales: ["dashboard","sales","projects","dealers","customers","approval","reports","assistant-page","settings"],
+  operations: ["dashboard","sales","field","approval","reports","assistant-page","settings"],
+};
+const ROLE_LABELS = { md: "MD / CEO", executive: "Executive", marketing: "Marketing Head", finance: "Finance", sales: "Sales", operations: "Operations" };
+
+function applyRoleUI(role) {
+  const allowed = ROLE_PAGES[role] || null;
+  if (allowed) {
+    document.querySelectorAll("#menu .menu-item").forEach((btn) => {
+      const page = btn.dataset.page;
+      btn.style.display = allowed.includes(page) ? "" : "none";
+    });
+    document.querySelectorAll("#mobile-nav .menu-item").forEach((btn) => {
+      const page = btn.dataset.page;
+      btn.style.display = allowed.includes(page) ? "" : "none";
+    });
+  }
+  const prof = document.querySelector(".avatar span");
+  if (prof) prof.textContent = ROLE_LABELS[role] || role;
 }
 
 /* ---- dashboard ---- */
@@ -45,6 +74,8 @@ async function bootstrapDashboard() {
       location.replace("/login");
       return;
     }
+    sessionStorage.setItem("brandos_role", s.role || sessionStorage.getItem("brandos_role") || "md");
+    applyRoleUI(sessionStorage.getItem("brandos_role"));
   } catch (_) {
     location.replace("/login");
     return;

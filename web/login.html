@@ -24,6 +24,15 @@ if (sessionStorage.getItem("brandos_token")) {
     <form id="login-form" class="login-form" autocomplete="off">
       <label>Password</label>
       <input type="password" id="login-pass" placeholder="password" autocomplete="off" />
+      <label>Role</label>
+      <select id="login-role" class="login-role">
+        <option value="md">MD / CEO — Full access</option>
+        <option value="marketing">Marketing Head</option>
+        <option value="finance">Finance</option>
+        <option value="sales">Sales</option>
+        <option value="operations">Operations</option>
+        <option value="executive">Executive</option>
+      </select>
       <div id="login-error" class="login-error" hidden></div>
       <button type="submit" class="btn login-btn">LOGIN</button>
       <a href="#" class="forgot">Forgot Password?</a>
