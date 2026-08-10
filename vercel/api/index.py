@@ -44,8 +44,9 @@ def _b64url_decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + pad)
 
 
-def make_token() -> str:
-    p = {"exp": int(time.time()) + TOKEN_TTL}
+def make_token(payload: dict | None = None) -> str:
+    p = payload or {}
+    p["exp"] = int(time.time()) + TOKEN_TTL
     body = json.dumps(p, separators=(",", ":"), sort_keys=True).encode()
     sig = hmac.new(TOKEN_SECRET.encode(), body, "sha256").hexdigest()
     return base64.urlsafe_b64encode(body).rstrip(b"=").decode("ascii") + "." + sig
@@ -157,8 +158,11 @@ def api_skill():
 def api_login():
     body = request.get_json(silent=True) or {}
     if str(body.get("password", "")) == LOGIN_PASSWORD:
-        token = make_token()
-        resp = jsonify({"ok": True, "token": token})
+        role = str(body.get("role", "") or "md").lower()
+        if role not in ("md", "marketing", "finance", "sales", "operations", "executive"):
+            role = "md"
+        token = make_token({"role": role, "user": "custodian"})
+        resp = jsonify({"ok": True, "token": token, "role": role})
         resp.set_cookie(COOKIE_NAME, token, httponly=True, samesite="Lax", max_age=TOKEN_TTL, path="/")
         return resp
     return jsonify({"ok": False, "error": "invalid password"}), 401
@@ -171,7 +175,7 @@ def api_session():
         if auth.startswith("Bearer "):
             tok = auth[len("Bearer "):]
     data = parse_token(tok) or {}
-    return jsonify({"authenticated": True, "user": "custodian", "exp": data.get("exp")})
+    return jsonify({"authenticated": True, "user": "custodian", "role": data.get("role", "md"), "exp": data.get("exp")})
 
 
 def api_canonical():
@@ -314,6 +318,34 @@ def api_actions():
     return {"items": management.list_actions()}
 
 
+def api_audit_log():
+    import audit
+
+    try:
+        limit = int(request.args.get("limit", 100))
+    except (TypeError, ValueError):
+        limit = 100
+    return {"items": audit.list_log(limit)}
+
+
+def api_alerts():
+    import sync_sheets
+    import audit
+
+    log = sync_sheets._read_store("sync_log") or []
+    alerts = []
+    for entry in log:
+        status = entry.get("status")
+        if status in ("mapping_alert", "error"):
+            alerts.append({
+                "source": entry.get("source"),
+                "level": "critical" if status == "mapping_alert" else "warning",
+                "message": entry.get("error") or entry.get("status"),
+                "at": entry.get("synced_at"),
+            })
+    return {"alerts": alerts, "count": len(alerts)}
+
+
 APP_API = {
     "/api/session": api_session,
     "/api/canonical": api_canonical,
@@ -337,6 +369,8 @@ APP_API = {
     "/api/decision-register": api_decision_register,
     "/api/decisions": api_decisions,
     "/api/actions": api_actions,
+    "/api/audit-log": api_audit_log,
+    "/api/alerts": api_alerts,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,

@@ -49,6 +49,7 @@ import commercial
 import ask
 import forecast
 import management
+import audit
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -86,7 +87,7 @@ DB_CONFIG = {
 
 STORES = ("campaigns", "competitors", "visibility", "visits", "kpis", "market_share",
           "projects", "dealers", "customers", "assets", "approvals", "tasks", "creative",
-          "sync_log", "decisions", "actions")
+          "sync_log", "decisions", "actions", "audit_log")
 
 
 def pymssql():
@@ -303,6 +304,27 @@ def authorized(self) -> bool:
     return bool(tok) and token_valid(tok)
 
 
+def current_role(self) -> str:
+    """Role claim from the authenticated token (default 'md')."""
+    tok = None
+    auth = self.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        tok = auth[len("Bearer "):]
+    else:
+        tok = _cookie_token_from_headers(self.headers)
+    data = parse_token(tok) if tok else None
+    return (data or {}).get("role", "md")
+
+
+# role -> allowed to write/configure (finance/sales/marketing/executive may view
+# their domains but only MD/admin modifies strategy/decisions/sync by default)
+ROLE_WRITE_ALLOWED = {"md", "executive"}
+
+
+def require_write_role(self) -> bool:
+    return current_role(self) in ROLE_WRITE_ALLOWED
+
+
 # --------------------------------------------------------------------------
 # Auth routes
 # --------------------------------------------------------------------------
@@ -402,8 +424,11 @@ class Handler(BaseHTTPRequestHandler):
             body = self._read_json()
             ok = isinstance(body, dict) and str(body.get("password", "")) == LOGIN_PASSWORD
             if ok:
-                token = make_token()
-                payload = json.dumps({"ok": True, "token": token}, ensure_ascii=False).encode("utf-8")
+                role = str(body.get("role", "") or "md").lower()
+                if role not in ("md", "marketing", "finance", "sales", "operations", "executive"):
+                    role = "md"
+                token = make_token({"role": role, "user": "custodian"})
+                payload = json.dumps({"ok": True, "token": token, "role": role}, ensure_ascii=False).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Cache-Control", "no-store")
@@ -411,7 +436,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Set-Cookie", _cookie_header_value(token))
                 self.end_headers()
                 self.wfile.write(payload)
+                audit.log("custodian", "login", role=role)
                 return
+            audit.log("unknown", "login_failed")
             self._json({"ok": False, "error": "invalid password"}, status=401)
             return
         if p == "/api/logout":
@@ -427,6 +454,9 @@ class Handler(BaseHTTPRequestHandler):
         if not authorized(self):
             self._json({"error": "unauthorized"}, status=401)
             return
+        if not require_write_role(self):
+            self._json({"error": "forbidden: role lacks write permission"}, status=403)
+            return
         if p == "/api/sync":
             body = self._read_json()
             source = (body or {}).get("source")
@@ -436,6 +466,7 @@ class Handler(BaseHTTPRequestHandler):
                     result = sync_sheets.sync_source(source, force=force)
                 else:
                     result = sync_sheets.sync_all(force=force)
+                audit.log("custodian", "sync", target=source or "all", role=current_role(self))
                 self._json({"ok": True, "result": result})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, status=500)
@@ -443,9 +474,12 @@ class Handler(BaseHTTPRequestHandler):
         if p in ("/api/decisions", "/api/actions"):
             record = self._read_json()
             if p == "/api/decisions":
-                self._json({"ok": True, "items": management.add_decision(record)})
+                items = management.add_decision(record)
+                audit.log("custodian", "decision", target=record.get("decision", ""), role=current_role(self))
             else:
-                self._json({"ok": True, "items": management.add_action(record)})
+                items = management.add_action(record)
+                audit.log("custodian", "action", target=record.get("action", ""), role=current_role(self))
+            self._json({"ok": True, "items": items})
             return
         store = p[len("/api/"):].split("/")[0]
         if store not in STORES:
@@ -453,6 +487,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         record = self._read_json()
         items = upsert_store(store, record)
+        audit.log("custodian", "store_write", target=store, role=current_role(self))
         self._json({"ok": True, "items": items})
 
     def _api(self, p):
@@ -462,7 +497,18 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/session":
             tok = _cookie_token_from_headers(self.headers) or self.headers.get("Authorization", "")[len("Bearer "):]
             data = parse_token(tok) or {}
-            self._json({"authenticated": True, "user": "custodian", "exp": data.get("exp")})
+            self._json({"authenticated": True, "user": "custodian", "role": data.get("role", "md"), "exp": data.get("exp")})
+            return
+        if p == "/api/audit-log":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            try:
+                limit = int(qs.get("limit", 100))
+            except ValueError:
+                limit = 100
+            self._json({"items": audit.list_log(limit)})
+            return
+        if p == "/api/alerts":
+            self._json(_mapping_alerts())
             return
         if p == "/api/canonical":
             self._json({
@@ -623,6 +669,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json(load_store(p[len("/api/"):]))
         else:
             self._json({"error": "unknown api"}, status=404)
+
+
+def _mapping_alerts() -> dict:
+    """Surface DATA MAPPING ALERTs + recent sync errors from the sync log."""
+    log = sync_sheets._read_store("sync_log") or []
+    alerts = []
+    for entry in log:
+        status = entry.get("status")
+        if status in ("mapping_alert", "error"):
+            alerts.append({
+                "source": entry.get("source"),
+                "level": "critical" if status == "mapping_alert" else "warning",
+                "message": entry.get("error") or entry.get("status"),
+                "at": entry.get("synced_at"),
+            })
+    return {"alerts": alerts, "count": len(alerts), "checked_at": datetime.now().strftime("%Y-%m-%d %H:%M")}
 
 
 def build_insights() -> dict:
