@@ -103,15 +103,26 @@ def connect():
 # DWH queries
 # --------------------------------------------------------------------------
 def _q(sql, params=()):
+    """Run a read-only DWH query, cached for DWH_CACHE_TTL seconds."""
+    cache_key = (sql, params)
+    now = time.time()
+    hit = DWH_CACHE.get(cache_key)
+    if hit and (now - hit[0]) < DWH_CACHE_TTL:
+        return hit[1]
     try:
         conn = connect()
         cur = conn.cursor()
         cur.execute(sql, params)
         rows = cur.fetchall()
         conn.close()
+        DWH_CACHE[cache_key] = (now, rows)
         return rows
     except Exception as e:  # noqa: BLE001
         return {"error": str(e)}
+
+
+DWH_CACHE = {}
+DWH_CACHE_TTL = int(os.getenv("BRANDOS_DWH_CACHE_TTL", "300"))  # 5 min
 
 
 def totals_between(start, end):
