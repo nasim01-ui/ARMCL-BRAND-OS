@@ -46,6 +46,9 @@ import budget_center
 import evaluate
 import nba
 import commercial
+import ask
+import forecast
+import management
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 WEB_DIR = Path(__file__).resolve().parent
@@ -83,7 +86,7 @@ DB_CONFIG = {
 
 STORES = ("campaigns", "competitors", "visibility", "visits", "kpis", "market_share",
           "projects", "dealers", "customers", "assets", "approvals", "tasks", "creative",
-          "sync_log")
+          "sync_log", "decisions", "actions")
 
 
 def pymssql():
@@ -437,6 +440,13 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)}, status=500)
             return
+        if p in ("/api/decisions", "/api/actions"):
+            record = self._read_json()
+            if p == "/api/decisions":
+                self._json({"ok": True, "items": management.add_decision(record)})
+            else:
+                self._json({"ok": True, "items": management.add_action(record)})
+            return
         store = p[len("/api/"):].split("/")[0]
         if store not in STORES:
             self._json({"ok": False, "error": f"unknown store {store}"}, status=404)
@@ -501,6 +511,25 @@ class Handler(BaseHTTPRequestHandler):
             return
         if p == "/api/commercial":
             self._json(commercial.commercial_payload())
+            return
+        if p == "/api/ask":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            self._json(ask.ask(qs.get("q", "")))
+            return
+        if p == "/api/forecast":
+            self._json(forecast.forecast())
+            return
+        if p == "/api/early-warning":
+            self._json(forecast.early_warning())
+            return
+        if p == "/api/decision-register":
+            self._json(management.decision_register())
+            return
+        if p == "/api/decisions":
+            self._json({"items": management.list_decisions()})
+            return
+        if p == "/api/actions":
+            self._json({"items": management.list_actions()})
             return
         if p == "/api/data-health":
             try:

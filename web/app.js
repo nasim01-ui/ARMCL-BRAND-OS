@@ -730,20 +730,122 @@ async function sendChat() {
   const chat = document.getElementById("ai-chat");
   chat.innerHTML += `<div class="msg user">${q}</div>`;
   input.value = "";
-  const resp = await api("/api/ai?q=" + encodeURIComponent(q));
-  chat.innerHTML += `<div class="msg ai">${resp.reply || "Let me check that for you."}</div>`;
+  const resp = await api("/api/ask?q=" + encodeURIComponent(q));
+  chat.innerHTML += `<div class="msg ai">${(resp.reply || "Let me check that for you.").replace(/\n/g, "<br>")}</div>`;
   chat.scrollTop = chat.scrollHeight;
 }
 document.getElementById("global-search").addEventListener("keydown", async (e) => {
   if (e.key === "Enter" && e.target.value.trim()) {
-    const resp = await api("/api/ai?q=" + encodeURIComponent(e.target.value));
+    const resp = await api("/api/ask?q=" + encodeURIComponent(e.target.value));
     alert(resp.reply || "No answer");
   }
 });
+
+/* ================= EXECUTIVE COMMAND CENTER (PHASE 19) ================= */
+async function loadExecCenter() {
+  const out = document.getElementById("exec-center");
+  if (!out) return;
+  try {
+    const [strategy, nbaD, warning, evalD] = await Promise.all([
+      api("/api/strategy-health"), api("/api/nba?limit=3"),
+      api("/api/early-warning"), api("/api/evaluate"),
+    ]);
+    const health = strategy.health || strategy;
+    const gradeColor = { "Healthy": "green", "Attention": "amber", "Critical": "red" }[health.grade] || "blue";
+    let html = `
+      <div class="exec-grid">
+        <div class="exec-block">
+          <div class="exec-head">🎯 Business Strategy Health</div>
+          <div class="exec-big">${health.health ?? "—"}/100</div>
+          <div><span class="badge ${gradeColor}">${health.grade || "—"}</span></div>
+          <div class="metric-note">${(health.components || []).slice(0, 3).map(c => `${c.dimension}: ${c.score}`).join(" · ") || ""}</div>
+        </div>
+        <div class="exec-block">
+          <div class="exec-head">🚨 Early Warnings</div>
+          ${(warning.warnings || []).map(w => `<div class="checker ${w.level}"><b>${w.kpi}</b> — ${w.message}</div>`).join("") || `<div class="metric-note">No early warnings.</div>`}
+        </div>
+      </div>
+      <div class="exec-block" style="margin-top:14px">
+        <div class="exec-head">🤖 Next Best Actions (top 3)</div>
+        ${(nbaD.recommendations || []).map(r => `
+          <div class="nba-card">
+            <div class="nba-pri">${r.priority_score}</div>
+            <div class="nba-body">
+              <div class="nba-action">${r.next_best_action}</div>
+              <div class="nba-meta">${r.diagnosis} · Owner: ${r.owner || "—"} · Due: ${r.deadline || "—"} · Conf: ${Math.round((r.confidence||0)*100)}%</div>
+            </div>
+          </div>`).join("") || `<div class="metric-note">No NBA yet.</div>`}
+      </div>`;
+    out.innerHTML = html;
+  } catch (e) {
+    out.innerHTML = `<div class="metric-note">Executive data unavailable.</div>`;
+  }
+}
+
+async function loadActionCenter() {
+  const out = document.getElementById("action-center");
+  if (!out) return;
+  try {
+    const ac = await api("/api/action-center");
+    const section = (title, items) => items.length ? `
+      <div class="exec-block" style="margin-top:10px">
+        <div class="exec-head">${title}</div>
+        ${items.map(r => `<div class="nba-card"><div class="nba-pri">${r.priority_score}</div><div class="nba-body"><div class="nba-action">${r.next_best_action}</div><div class="nba-meta">${r.owner || "—"} · Due ${r.deadline || "—"}</div></div></div>`).join("")}
+      </div>` : "";
+    out.innerHTML = section("⚡ ACT NOW", ac.act_now || []) + section("📅 THIS WEEK", ac.this_week || []) + section("👀 WATCH", ac.watch || []) + section("🚀 OPPORTUNITIES", ac.opportunities || []) || `<div class="metric-note">No actions yet.</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="metric-note">Action center unavailable.</div>`;
+  }
+}
+
+async function loadDecisionRegister() {
+  const out = document.getElementById("decision-register");
+  if (!out) return;
+  try {
+    const dr = await api("/api/decision-register");
+    out.innerHTML = `
+      <div class="grid cards" style="margin-bottom:10px">
+        <div class="card kpi-card"><div class="label">Decisions</div><div class="value">${dr.counts.decisions}</div></div>
+        <div class="card kpi-card"><div class="label">Open Actions</div><div class="value">${dr.counts.open_actions}</div></div>
+        <div class="card kpi-card"><div class="label">Completed</div><div class="value">${dr.counts.completed_actions}</div></div>
+      </div>
+      ${(dr.decisions || []).map(d => `<div class="checker"><b>${d.status}</b> — ${d.decision} <span class="muted">(${d.owner || "—"} · ${d.date})</span></div>`).join("") || `<div class="metric-note">No decisions recorded yet.</div>`}`;
+  } catch (e) {
+    out.innerHTML = `<div class="metric-note">Decision register unavailable.</div>`;
+  }
+}
+
+async function loadForecast() {
+  const out = document.getElementById("forecast-panel");
+  if (!out) return;
+  try {
+    const f = await api("/api/forecast");
+    const rows = [];
+    if (f.series.market_share_pct) {
+      const ms = f.series.market_share_pct;
+      rows.push(`<div class="checker"><b>Market Share</b> — latest ${ms.latest}%, target ${ms.target}%, forecast next: ${(ms.forecast_next_3||[]).join(", ")}%</div>`);
+    }
+    if (f.series.mtd_sales_run_rate) {
+      const m = f.series.mtd_sales_run_rate;
+      rows.push(`<div class="checker"><b>MTD Sales</b> — ${m.actual_mtd.toLocaleString()} CFT actual, run-rate ${m.run_rate_per_day.toLocaleString()}/day → EOM ${(m.projected_achievement_pct||0)}% of target</div>`);
+    }
+    if (f.series.brand_budget_util_pct) {
+      const b = f.series.brand_budget_util_pct;
+      rows.push(`<div class="checker"><b>Brand Budget</b> — ${b.actual_ytd}% utilized YTD (pacing target ${b.target_ytd_pacing}%)</div>`);
+    }
+    out.innerHTML = rows.join("") || `<div class="metric-note">No forecast data yet.</div>`;
+  } catch (e) {
+    out.innerHTML = `<div class="metric-note">Forecast unavailable.</div>`;
+  }
+}
 
 /* ================= INIT ================= */
 function init() {
   todayDate();
   loadPage("dashboard");
+  loadExecCenter();
+  loadActionCenter();
+  loadDecisionRegister();
+  loadForecast();
   window.addEventListener("resize", () => {});
 }

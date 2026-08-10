@@ -278,6 +278,42 @@ def api_commercial():
     return commercial.commercial_payload()
 
 
+def api_ask():
+    import ask
+
+    return ask.ask(request.args.get("q", ""))
+
+
+def api_forecast():
+    import forecast
+
+    return forecast.forecast()
+
+
+def api_early_warning():
+    import forecast
+
+    return forecast.early_warning()
+
+
+def api_decision_register():
+    import management
+
+    return management.decision_register()
+
+
+def api_decisions():
+    import management
+
+    return {"items": management.list_decisions()}
+
+
+def api_actions():
+    import management
+
+    return {"items": management.list_actions()}
+
+
 APP_API = {
     "/api/session": api_session,
     "/api/canonical": api_canonical,
@@ -295,6 +331,12 @@ APP_API = {
     "/api/nba": api_nba,
     "/api/action-center": api_action_center,
     "/api/commercial": api_commercial,
+    "/api/ask": api_ask,
+    "/api/forecast": api_forecast,
+    "/api/early-warning": api_early_warning,
+    "/api/decision-register": api_decision_register,
+    "/api/decisions": api_decisions,
+    "/api/actions": api_actions,
     "/api/overview": api_overview,
     "/api/monthly-revenue": api_monthly_revenue,
     "/api/budget": api_budget,
@@ -389,6 +431,20 @@ def api_sync():
         return jsonify({"ok": True, "result": result})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/decisions", methods=["POST"])
+def api_decisions_post():
+    import management
+
+    return jsonify({"ok": True, "items": management.add_decision(request.get_json(silent=True) or {})})
+
+
+@app.route("/api/actions", methods=["POST"])
+def api_actions_post():
+    import management
+
+    return jsonify({"ok": True, "items": management.add_action(request.get_json(silent=True) or {})})
 
 
 @app.route("/api/<name>", methods=["POST"])

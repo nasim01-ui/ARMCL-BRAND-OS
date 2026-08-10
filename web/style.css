@@ -247,3 +247,19 @@ table td b { color: var(--accent); font-weight: 700; }
 
 canvas { width: 100%; height: auto; }
 footer { padding: 16px; text-align: center; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+
+/* ========= Executive Command Center (PHASE 19) ========= */
+.exec-command { margin-bottom: 18px; }
+.exec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 768px) { .exec-grid { grid-template-columns: 1fr; } }
+.exec-block { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.exec-head { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.exec-big { font-size: 34px; font-weight: 800; color: var(--text); }
+.nba-card { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.nba-card:last-child { border-bottom: none; }
+.nba-pri { min-width: 40px; height: 40px; border-radius: 10px; background: rgba(37,99,235,.18); color: var(--akij-2); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+.nba-body { flex: 1; }
+.nba-action { font-size: 13px; font-weight: 600; }
+.nba-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.checker.critical { border-left: 3px solid var(--red); }
+.checker.warning { border-left: 3px solid var(--amber); }
