@@ -977,7 +977,6 @@ const NASIM_ROWS = [
   { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23", cost:0, po:"", poValue:0 }
 ];
 const NASIM_MARKETING_BUDGET = 25907508; // FY 2026-27 approved brand budget (Source B)
-const _nmCharts = {};
 function loadNasimProcurement() {
   const rows = NASIM_ROWS;
   const el = (id) => document.getElementById(id);
@@ -985,56 +984,68 @@ function loadNasimProcurement() {
   const tq = rows.reduce((a, r) => a + r.req, 0);
   const aq = rows.reduce((a, r) => a + r.appr, 0);
   const iq = rows.reduce((a, r) => a + r.issued, 0);
+  const committed = rows.reduce((a, r) => a + (r.cost || 0), 0);
+  const remaining = NASIM_MARKETING_BUDGET - committed;
+  const util = NASIM_MARKETING_BUDGET ? (committed / NASIM_MARKETING_BUDGET * 100) : 0;
+
+  // KPI cards
   el("nm-k1").textContent = rows.length;
   el("nm-k2").textContent = fmt.format(tq);
   el("nm-k3").textContent = rows.filter(r => r.status === "Approved").length + " / " + rows.length;
   el("nm-k4").textContent = fmt.format(iq);
-  el("nm-k5").textContent = 0;
-  el("nm-k6").textContent = 0;
+  el("nm-k5").textContent = rows.filter(r => r.po).length;
+  el("nm-k6").textContent = rows.filter(r => r.poValue > 0).length;
 
-  // Register table with editable cost column
-  el("nm-table").innerHTML = table(
-    [
-      { label: "Req ID", td: (r) => r.id },
-      { label: "Purpose", td: (r) => r.purpose },
-      { label: "Type", td: (r) => badge(r.type === "IR" ? "active" : "info") },
-      { label: "Item", td: (r) => r.item },
-      { label: "Plant", td: (r) => r.plant },
-      { label: "Requested", num: true, td: (r) => fmt.format(r.req) },
-      { label: "Approved", num: true, td: (r) => fmt.format(r.appr) },
-      { label: "Issued", num: true, td: (r) => fmt.format(r.issued) },
-      { label: "Cost (৳)", num: true, td: (r) => `<input type="number" min="0" step="1" value="${r.cost || 0}" oninput="setNasimCost('${r.id}', this.value)" style="width:110px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:12px" />` },
-      { label: "Linked PO", td: (r) => r.po || "—" },
-      { label: "PO Value (৳)", num: true, td: (r) => r.poValue ? fmt.format(r.poValue) : "—" },
-      { label: "Status", td: (r) => badge("active") },
-      { label: "Date", td: (r) => r.date },
-    ],
-    rows
-  );
-
-  // Dynamic marketing budget deduction
-  const committed = rows.reduce((a, r) => a + (r.cost || 0), 0);
-  const remaining = NASIM_MARKETING_BUDGET - committed;
-  const util = NASIM_MARKETING_BUDGET ? (committed / NASIM_MARKETING_BUDGET * 100) : 0;
+  // Budget cards + progress bar
   el("nm-budget-total").textContent = fmtBDT(NASIM_MARKETING_BUDGET);
   el("nm-budget-committed").textContent = fmtBDT(committed);
   el("nm-budget-remaining").textContent = fmtBDT(Math.max(0, remaining));
-  el("nm-budget-remaining-pct").textContent = NASIM_MARKETING_BUDGET ? ((remaining / NASIM_MARKETING_BUDGET) * 100).toFixed(1) + "% of budget" : "";
+  el("nm-budget-remaining-pct").textContent = NASIM_MARKETING_BUDGET ? ((Math.max(0, remaining) / NASIM_MARKETING_BUDGET) * 100).toFixed(1) + "% of budget" : "";
   el("nm-budget-util").textContent = util.toFixed(2) + "%";
+  const bar = document.getElementById("nm-budget-bar");
+  if (bar) bar.style.width = Math.min(100, util).toFixed(2) + "%";
 
-  if (!window.Chart) return;
-  Object.values(_nmCharts).forEach((c) => c && c.destroy());
-  const labels = rows.map(r => r.item);
-  _nmCharts.c1 = new Chart(el("nm-c1"), { type: "bar", data: { labels, datasets: [
-    { label: "Requested", data: rows.map(r => r.req) },
-    { label: "Approved", data: rows.map(r => r.appr) },
-  ]}, options: { responsive: true, maintainAspectRatio: false } });
-  _nmCharts.c2 = new Chart(el("nm-c2"), { type: "doughnut", data: { labels: ["Approved"], datasets: [{ data: [rows.length] }] }, options: { responsive: true, maintainAspectRatio: false } });
-  _nmCharts.c3 = new Chart(el("nm-c3"), { type: "bar", data: { labels, datasets: [
-    { label: "Approved Qty", data: rows.map(r => r.appr) },
-    { label: "Issued Qty", data: rows.map(r => r.issued) },
-  ]}, options: { responsive: true, maintainAspectRatio: false } });
-  _nmCharts.c4 = new Chart(el("nm-c4"), { type: "pie", data: { labels: ["MKOH - Advertisement & Publicity"], datasets: [{ data: [100] }] }, options: { responsive: true, maintainAspectRatio: false } });
+  // Pipeline
+  const p = document.getElementById("nm-pipeline");
+  if (p) {
+    const steps = [
+      { s: "IR Created", n: rows.length, c: "done" },
+      { s: "IR Approved", n: rows.filter(r => r.status === "Approved").length, c: "done" },
+      { s: "PR Created", n: 0, c: "open" },
+      { s: "PO Issued", n: rows.filter(r => r.po).length, c: rows.filter(r => r.po).length ? "done" : "open" },
+      { s: "Budget Deducted", n: committed ? fmtBDT(committed) : "0", c: committed ? "done" : "open" },
+    ];
+    p.innerHTML = steps.map(st => `<div class="pstep ${st.c}"><div class="s">${st.s}</div><div class="n">${st.n}</div></div>`).join("");
+  }
+
+  // Item cards
+  el("nm-table").innerHTML = `
+    <div class="grid cards">
+      ${rows.map(r => {
+        const issuePct = r.appr ? Math.round(r.issued / r.appr * 100) : 0;
+        const cost = r.cost || 0;
+        return `<div class="card item-card">
+          <div class="item-head"><b>${r.item}</b> <span class="badge green">${r.status}</span></div>
+          <div class="item-meta">
+            <span>IR: ${r.id}</span>
+            <span>${r.plant}</span>
+            <span>${r.date}</span>
+          </div>
+          <div class="item-rows">
+            <div class="summary-row"><span>Requested</span><b>${fmt.format(r.req)} pcs</b></div>
+            <div class="summary-row"><span>Approved</span><b>${fmt.format(r.appr)} pcs</b></div>
+            <div class="summary-row"><span>Issued</span><b>${fmt.format(r.issued)} pcs (${issuePct}%)</b></div>
+            <div class="summary-row"><span>PO / Vendor</span><b>${r.po || "—"}</b></div>
+            <div class="summary-row"><span>Cost (৳)</span><b>${fmtBDT(cost)}</b></div>
+          </div>
+          <div class="item-cost">
+            <label>Set cost (৳)</label>
+            <input type="number" min="0" step="1" value="${cost}" oninput="setNasimCost('${r.id}', this.value)" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;margin-top:4px" />
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div class="metric-note" style="margin-top:10px">Edit the cost field on any item card → Committed, Remaining and Utilization update live.</div>`;
 }
 
 function setNasimCost(id, val) {
