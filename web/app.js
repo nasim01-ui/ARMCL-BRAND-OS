@@ -972,7 +972,8 @@ async function loadForecast() {
 }
 
 /* ================= NASIM MARKETING PROCUREMENT (dynamic) ================= */
-let NASIM_STATE = { irs: [], items: [], prs: [], pos: [], budget: 0 };
+let NASIM_STATE = { irs: [], items: [], prs: [], pos: [], all_pos: [], fiscal_years: [], budget: 0 };
+let NASIM_FY = "all";
 async function loadNasimProcurement() {
   const el = (id) => document.getElementById(id);
   if (!el("nm-k1")) return;
@@ -984,7 +985,16 @@ async function loadNasimProcurement() {
       NASIM_STATE.items = Object.values(d.ir_items || {}).flat() || [];
       NASIM_STATE.prs = d.prs || [];
       NASIM_STATE.pos = d.pos || [];
+      NASIM_STATE.all_pos = d.all_pos || [];
+      NASIM_STATE.fiscal_years = d.fiscal_years || [];
       NASIM_STATE.budget = d.marketing_budget || 25907508;
+      // populate FY filter
+      const sel = document.getElementById("nm-fy-filter");
+      if (sel) {
+        const cur = NASIM_FY;
+        sel.innerHTML = '<option value="all">All</option>' + NASIM_STATE.fiscal_years.map(fy => `<option value="${fy}" ${fy === cur ? "selected" : ""}>${fy}</option>`).join("");
+      }
+      renderNasimPO();
     }
   } catch (e) {
     console.error("nasim procurement load failed", e);
@@ -1065,6 +1075,38 @@ async function loadNasimProcurement() {
     </div>
     <div class="metric-note" style="margin-top:10px">Data auto-fetched from DWH via /api/nasim-procurement (enroll 563614). Committed = linked PO amounts deducted from Marketing Budget.</div>`;
 }
+
+function renderNasimPO() {
+  const all = NASIM_STATE.all_pos || [];
+  const filtered = NASIM_FY === "all" ? all : all.filter(p => p.fiscal_year === NASIM_FY);
+  const el = (id) => document.getElementById(id);
+  if (!el("nm-po-table")) return;
+  el("nm-po-count").textContent = filtered.length;
+  el("nm-po-value").textContent = fmtBDT(filtered.reduce((a, p) => a + (p.po_amount || 0), 0));
+  el("nm-po-approved").textContent = filtered.filter(p => p.approved).length + " / " + filtered.length;
+  el("nm-po-closed").textContent = filtered.filter(p => p.closed).length;
+  const rows = filtered.map(p => ({
+    po_no: p.po_no, date: p.po_date, fy: p.fiscal_year, vendor: p.vendor || "—",
+    item: p.item || "—", qty: p.order_qty || p.po_qty || 0, amount: p.po_amount || 0,
+    status: p.approved ? (p.closed ? "Closed" : "Approved") : "Pending",
+  }));
+  el("nm-po-table").innerHTML = table(
+    [
+      { label: "PO No", td: (r) => r.po_no },
+      { label: "Date", td: (r) => r.date },
+      { label: "FY", td: (r) => r.fy },
+      { label: "Vendor", td: (r) => r.vendor },
+      { label: "Item", td: (r) => r.item },
+      { label: "Qty", num: true, td: (r) => fmt.format(r.qty) },
+      { label: "Amount (৳)", num: true, td: (r) => fmtBDT(r.amount) },
+      { label: "Status", td: (r) => badge(r.status === "Closed" ? "done" : r.status === "Approved" ? "active" : "pending") },
+    ],
+    rows
+  );
+}
+document.addEventListener("change", (e) => {
+  if (e.target && e.target.id === "nm-fy-filter") { NASIM_FY = e.target.value; renderNasimPO(); }
+});
 
 /* ================= INIT ================= */
 function init() {
