@@ -320,7 +320,19 @@ def get_sales_status(force: bool = False) -> dict:
         _cache["sales_at"] = now
         return data
     except Exception as e:  # noqa: BLE001
-        return {"error": str(e), "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        # Even if the statement is unreachable, still surface the authoritative
+        # finance-budget target for the current month when available.
+        fallback = {"error": str(e), "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        try:
+            tgt = _finance_monthly_target(datetime.now().strftime("%b'%y"))
+            if tgt is not None:
+                fallback["monthly_target"] = tgt
+                fallback["monthly_target_source"] = "Finance Budget (Source A)"
+                fallback["mtd_sales"] = None
+                fallback["achievement_pct"] = None
+        except Exception:
+            pass
+        return fallback
 
 
 def refresh_sales() -> dict:
