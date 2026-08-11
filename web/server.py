@@ -355,6 +355,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
         self.wfile.write(body)
 
@@ -372,6 +375,16 @@ class Handler(BaseHTTPRequestHandler):
             return {}
 
     # -- requests ---------------------------------------------------------
+    def do_OPTIONS(self):
+        """CORS preflight for cross-origin standalone dashboards."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self):
         parsed = urlparse(self.path)
         p = parsed.path
@@ -425,6 +438,11 @@ class Handler(BaseHTTPRequestHandler):
         }.get(fp.suffix, "application/octet-stream")
         self._write(fp.read_bytes(), ctype)
 
+    def _cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
     def do_POST(self):
         parsed = urlparse(self.path)
         p = parsed.path
@@ -445,6 +463,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Cache-Control", "no-store")
                 self.send_header("Content-Length", str(len(payload)))
                 self.send_header("Set-Cookie", _cookie_header_value(token))
+                self._cors_headers()
                 self.end_headers()
                 self.wfile.write(payload)
                 audit.log("custodian", "login", role=role)
@@ -459,6 +478,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(payload)))
             self.send_header("Set-Cookie", _clear_cookie_value())
+            self._cors_headers()
             self.end_headers()
             self.wfile.write(payload)
             return

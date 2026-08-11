@@ -381,6 +381,19 @@ APP_API = {
 }
 
 
+@app.after_request
+def _cors(resp):
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return resp
+
+
+@app.route("/api/<name>", methods=["OPTIONS"])
+def _options(name=""):
+    return ("", 204)
+
+
 @app.before_request
 def _gate_api():
     path = request.path
