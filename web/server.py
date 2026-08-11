@@ -421,7 +421,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _static(self, rel: str):
-        rel = rel.replace("\\", "/").lstrip("/")
+        from urllib.parse import unquote
+        rel = unquote(rel).replace("\\", "/").lstrip("/")
         if rel.startswith("web/"):
             rel = rel[len("web/"):]
         fp = (WEB_DIR / rel).resolve()
