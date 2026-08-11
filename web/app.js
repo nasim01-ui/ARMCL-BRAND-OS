@@ -38,7 +38,7 @@ if (isLogin) {
 const ROLE_PAGES = {
   md: null, // full access
   executive: null, // full access
-  marketing: ["dashboard","market","competitors","campaigns","creative","governance","assets","budget","approval","reports","assistant-page","settings"],
+  marketing: ["dashboard","market","competitors","campaigns","creative","governance","assets","budget","approval","reports","assistant-page","nasim","settings"],
   finance: ["dashboard","revenue","budget","approval","reports","assistant-page","settings"],
   sales: ["dashboard","sales","projects","dealers","customers","approval","reports","assistant-page","settings"],
   operations: ["dashboard","sales","field","approval","reports","assistant-page","settings"],
@@ -134,7 +134,7 @@ function todayDate() {
 
 /* ---------- page routing ---------- */
 const PAGES = ["dashboard","revenue","sales","market","competitors","projects","dealers",
-  "customers","campaigns","creative","governance","assets","field","budget","approval","reports","assistant","settings"];
+  "customers","campaigns","creative","governance","assets","field","budget","approval","reports","assistant","nasim","settings"];
 
 function switchPage(page) {
   document.querySelectorAll(".pane").forEach((p) => p.classList.remove("active"));
@@ -167,6 +167,7 @@ function loadPage(page) {
     case "approval": loadApprovalsSummary(); break;
     case "reports": loadReports(); break;
     case "assistant": break;
+    case "nasim": loadNasimProcurement(); break;
     case "settings": break;
   }
 }
@@ -968,6 +969,54 @@ async function loadForecast() {
   } catch (e) {
     out.innerHTML = `<div class="metric-note">Forecast unavailable.</div>`;
   }
+}
+
+/* ================= NASIM MARKETING PROCUREMENT ================= */
+const NASIM_ROWS = [
+  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29" },
+  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23" }
+];
+const _nmCharts = {};
+function loadNasimProcurement() {
+  const rows = NASIM_ROWS;
+  const el = (id) => document.getElementById(id);
+  if (!el("nm-k1")) return;
+  const tq = rows.reduce((a, r) => a + r.req, 0);
+  const aq = rows.reduce((a, r) => a + r.appr, 0);
+  const iq = rows.reduce((a, r) => a + r.issued, 0);
+  el("nm-k1").textContent = rows.length;
+  el("nm-k2").textContent = fmt.format(tq);
+  el("nm-k3").textContent = rows.filter(r => r.status === "Approved").length + " / " + rows.length;
+  el("nm-k4").textContent = fmt.format(iq);
+  el("nm-k5").textContent = 0;
+  el("nm-k6").textContent = 0;
+
+  el("nm-table").innerHTML = table([
+    { label: "Req ID", td: (r) => r.id },
+    { label: "Purpose", td: (r) => r.purpose },
+    { label: "Type", td: (r) => badge(r.type === "IR" ? "active" : "info") },
+    { label: "Item", td: (r) => r.item },
+    { label: "Plant", td: (r) => r.plant },
+    { label: "Requested", num: true, td: (r) => fmt.format(r.req) },
+    { label: "Approved", num: true, td: (r) => fmt.format(r.appr) },
+    { label: "Issued", num: true, td: (r) => fmt.format(r.issued) },
+    { label: "Status", td: (r) => badge("active") },
+    { label: "Date", td: (r) => r.date },
+  ], rows);
+
+  if (!window.Chart) return;
+  Object.values(_nmCharts).forEach((c) => c && c.destroy());
+  const labels = rows.map(r => r.item);
+  _nmCharts.c1 = new Chart(el("nm-c1"), { type: "bar", data: { labels, datasets: [
+    { label: "Requested", data: rows.map(r => r.req) },
+    { label: "Approved", data: rows.map(r => r.appr) },
+  ]}, options: { responsive: true, maintainAspectRatio: false } });
+  _nmCharts.c2 = new Chart(el("nm-c2"), { type: "doughnut", data: { labels: ["Approved"], datasets: [{ data: [rows.length] }] }, options: { responsive: true, maintainAspectRatio: false } });
+  _nmCharts.c3 = new Chart(el("nm-c3"), { type: "bar", data: { labels, datasets: [
+    { label: "Approved Qty", data: rows.map(r => r.appr) },
+    { label: "Issued Qty", data: rows.map(r => r.issued) },
+  ]}, options: { responsive: true, maintainAspectRatio: false } });
+  _nmCharts.c4 = new Chart(el("nm-c4"), { type: "pie", data: { labels: ["MKOH - Advertisement & Publicity"], datasets: [{ data: [100] }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
 /* ================= INIT ================= */

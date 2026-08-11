@@ -264,3 +264,6 @@ footer { padding: 16px; text-align: center; color: var(--muted); font-size: 12px
 .nba-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .checker.critical { border-left: 3px solid var(--red); }
 .checker.warning { border-left: 3px solid var(--amber); }
+
+/* ========= Nasim Marketing Procurement pane ========= */
+.note-bar { background: rgba(37,99,235,.08); border-left: 4px solid var(--blue); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AKIJ Ready Mix BrandOS</title>
 <link rel="stylesheet" href="/web/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
 <script>
 // Hard guard: never reveal the dashboard if no session token is present in
 // sessionStorage. The server already protects /dashboard via the session
@@ -71,6 +72,7 @@
         <button class="menu-item" data-page="approval">📝 Approval Workflow</button>
         <button class="menu-item" data-page="reports">📊 Reports Center</button>
         <button class="menu-item" data-page="assistant-page">🤖 AI Assistant</button>
+        <button class="menu-item" data-page="nasim">🧾 Marketing Procurement (Nasim)</button>
         <button class="menu-item" data-page="settings">⚙ Settings</button>
       </nav>
     </aside>
@@ -351,6 +353,31 @@
             <div class="set">AI Configuration</div><div class="set">Audit Logs</div>
           </div>
         </div>
+      </div>
+
+      <!-- NASIM MARKETING PROCUREMENT -->
+      <div class="pane" id="page-nasim">
+        <h2 class="page-title">🧾 Marketing Procurement & Inventory — Md. Nasim Uddin (563614)</h2>
+        <div class="note-bar">All IR / PR / PO created by <b>Md. Nasim Uddin (563614)</b> under <b>Marketing</b> cost center · Source: DWH (BU 175)</div>
+
+        <div class="grid cards" style="margin-bottom:12px">
+          <div class="card kpi-card"><div class="label">Item Requests (IR)</div><div class="value" id="nm-k1">--</div><div class="delta">by Nasim · Marketing</div></div>
+          <div class="card kpi-card"><div class="label">Total Qty</div><div class="value" id="nm-k2">--</div><div class="delta">requested pcs</div></div>
+          <div class="card kpi-card"><div class="label">IR Approved</div><div class="value" id="nm-k3">--</div><div class="delta">approved / total</div></div>
+          <div class="card kpi-card"><div class="label">Qty Issued</div><div class="value" id="nm-k4">--</div><div class="delta">from inventory</div></div>
+          <div class="card kpi-card"><div class="label">Linked PR</div><div class="value" id="nm-k5">0</div><div class="delta">purchase requests</div></div>
+          <div class="card kpi-card"><div class="label">Linked PO</div><div class="value" id="nm-k6">0</div><div class="delta">purchase orders</div></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><h3>Requested vs Approved Qty by Item</h3></div><canvas id="nm-c1" height="240"></canvas></div>
+          <div class="card"><div class="card-head"><h3>Workflow Status</h3></div><canvas id="nm-c2" height="240"></canvas></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <div class="card"><div class="card-head"><h3>Issue Progress per Item</h3></div><canvas id="nm-c3" height="220"></canvas></div>
+          <div class="card"><div class="card-head"><h3>Cost Element Allocation</h3></div><canvas id="nm-c4" height="220"></canvas></div>
+        </div>
+        <div class="card" style="margin-top:14px"><div class="card-head"><h3>Marketing Procurement Register</h3></div><div id="nm-table"></div></div>
       </div>
 
     </main>
