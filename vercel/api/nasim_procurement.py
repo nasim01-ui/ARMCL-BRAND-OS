@@ -33,6 +33,37 @@ def _user_id_for(reference_id: int) -> int | None:
 
 
 def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
+    """Return IRs created by the employee + linked PRs/POs + marketing budget.
+
+    Caches the result to a JSON file so that if the DWH is unreachable (e.g.
+    Render -> remote MSSQL), the last known data is returned instead of failing.
+    """
+    cache_path = BASE_DIR / "database" / "nasim_procurement_cache.json"
+    try:
+        data = _build_procurement(enroll, business_unit)
+        if data.get("irs") or data.get("all_pos"):
+            cache_path.parent.mkdir(exist_ok=True)
+            cache_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        return data
+    except Exception:
+        # fall back to cache
+        if cache_path.exists():
+            try:
+                return json.loads(cache_path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {
+            "employee": {"enroll": enroll, "user_id": None},
+            "marketing_budget": 25907508.0,
+            "fiscal_years": [],
+            "irs": [], "ir_items": {}, "prs": [], "pos": [],
+            "all_pos": [],
+            "error": "DWH unreachable",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+        }
+
+
+def _build_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
     """Return IRs created by the employee + linked PRs/POs + marketing budget."""
     user_id = _user_id_for(enroll)
 
