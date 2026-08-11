@@ -125,21 +125,65 @@ def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
                         pos.append({
                             "ir_code": ir["ir_code"], "pr_code": pr["pr_code"],
                             "po_no": r[0], "po_date": str(r[1]),
+                            "fiscal_year": _fiscal_year(r[1]),
                             "vendor": r[2] or "", "po_amount": float(r[3] or 0),
                             "po_qty": float(r[4] or 0), "approved": bool(r[5]),
                             "closed": bool(r[6]), "item": r[7] or "",
                             "order_qty": float(r[8] or 0), "po_value": float(r[9] or 0),
                         })
 
+    # All historical Marketing cost-center POs (for the FY-filtered table).
+    # Header-only query (no row join) to stay fast on remote DWH.
+    all_pos = []
+    rows = _query(
+        """SELECT h.strPurchaseOrderNo, h.dtePurchaseOrderDate, h.strBusinessPartnerName,
+                  h.numTotalAmount, h.numTotalQty, h.isApproved, h.isClosed
+           FROM pro.tblPurchaseOrderHeaderArc h
+           WHERE h.intBusinessUnitId=%s AND h.isActive=1
+             AND h.strPurchaseOrderNo LIKE 'PO-ARMCL%'
+             AND EXISTS (SELECT 1 FROM pro.tblPurchaseOrderRowArc r
+                         WHERE r.intPurchaseOrderId = h.intPurchaseOrderId
+                           AND r.isActive=1 AND r.strCostCenterName = 'Marketing')
+           ORDER BY h.dtePurchaseOrderDate DESC""",
+        (business_unit,),
+    )
+    if not isinstance(rows, dict):
+        for r in rows:
+            all_pos.append({
+                "po_no": r[0], "po_date": str(r[1]),
+                "fiscal_year": _fiscal_year(r[1]),
+                "vendor": r[2] or "", "po_amount": float(r[3] or 0),
+                "po_qty": float(r[4] or 0), "approved": bool(r[5]),
+                "closed": bool(r[6]), "item": "", "order_qty": 0, "po_value": float(r[3] or 0),
+            })
+
     return {
         "employee": {"enroll": enroll, "user_id": user_id},
         "marketing_budget": 25907508.0,
+        "fiscal_years": sorted({p["fiscal_year"] for p in all_pos}, reverse=True),
         "irs": irs,
         "ir_items": ir_items,
         "prs": prs,
         "pos": pos,
+        "all_pos": all_pos,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
+
+
+def _fiscal_year(dt) -> str:
+    """Bangladesh FY: Jul-Jun. 2026-08 -> '2026-2027', 2026-03 -> '2025-2026'."""
+    from datetime import date
+
+    if isinstance(dt, str):
+        try:
+            dt = date.fromisoformat(dt[:10])
+        except ValueError:
+            return ""
+    if dt is None:
+        return ""
+    if dt.month >= 7:
+        return f"{dt.year}-{dt.year + 1}"
+    return f"{dt.year - 1}-{dt.year}"
 
 
 if __name__ == "__main__":

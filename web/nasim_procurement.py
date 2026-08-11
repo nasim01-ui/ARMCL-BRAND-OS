@@ -132,16 +132,18 @@ def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
                             "order_qty": float(r[8] or 0), "po_value": float(r[9] or 0),
                         })
 
-    # All historical POs in the Marketing cost center (for the FY-filtered table)
+    # All historical Marketing cost-center POs (for the FY-filtered table).
+    # Header-only query (no row join) to stay fast on remote DWH.
     all_pos = []
     rows = _query(
         """SELECT h.strPurchaseOrderNo, h.dtePurchaseOrderDate, h.strBusinessPartnerName,
-                  h.numTotalAmount, h.numTotalQty, h.isApproved, h.isClosed,
-                  r.strItemName, r.numOrderQty, r.numTotalValue
+                  h.numTotalAmount, h.numTotalQty, h.isApproved, h.isClosed
            FROM pro.tblPurchaseOrderHeaderArc h
-           JOIN pro.tblPurchaseOrderRowArc r ON r.intPurchaseOrderId = h.intPurchaseOrderId
-           WHERE h.intBusinessUnitId=%s AND h.isActive=1 AND r.isActive=1
-             AND r.strCostCenterName = 'Marketing'
+           WHERE h.intBusinessUnitId=%s AND h.isActive=1
+             AND h.strPurchaseOrderNo LIKE 'PO-ARMCL%'
+             AND EXISTS (SELECT 1 FROM pro.tblPurchaseOrderRowArc r
+                         WHERE r.intPurchaseOrderId = h.intPurchaseOrderId
+                           AND r.isActive=1 AND r.strCostCenterName = 'Marketing')
            ORDER BY h.dtePurchaseOrderDate DESC""",
         (business_unit,),
     )
@@ -152,8 +154,7 @@ def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
                 "fiscal_year": _fiscal_year(r[1]),
                 "vendor": r[2] or "", "po_amount": float(r[3] or 0),
                 "po_qty": float(r[4] or 0), "approved": bool(r[5]),
-                "closed": bool(r[6]), "item": r[7] or "",
-                "order_qty": float(r[8] or 0), "po_value": float(r[9] or 0),
+                "closed": bool(r[6]), "item": "", "order_qty": 0, "po_value": float(r[3] or 0),
             })
 
     return {
