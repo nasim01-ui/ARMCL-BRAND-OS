@@ -973,9 +973,10 @@ async function loadForecast() {
 
 /* ================= NASIM MARKETING PROCUREMENT ================= */
 const NASIM_ROWS = [
-  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29" },
-  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23" }
+  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29", cost:0 },
+  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23", cost:0 }
 ];
+const NASIM_MARKETING_BUDGET = 25907508; // FY 2026-27 approved brand budget (Source B)
 const _nmCharts = {};
 function loadNasimProcurement() {
   const rows = NASIM_ROWS;
@@ -991,18 +992,33 @@ function loadNasimProcurement() {
   el("nm-k5").textContent = 0;
   el("nm-k6").textContent = 0;
 
-  el("nm-table").innerHTML = table([
-    { label: "Req ID", td: (r) => r.id },
-    { label: "Purpose", td: (r) => r.purpose },
-    { label: "Type", td: (r) => badge(r.type === "IR" ? "active" : "info") },
-    { label: "Item", td: (r) => r.item },
-    { label: "Plant", td: (r) => r.plant },
-    { label: "Requested", num: true, td: (r) => fmt.format(r.req) },
-    { label: "Approved", num: true, td: (r) => fmt.format(r.appr) },
-    { label: "Issued", num: true, td: (r) => fmt.format(r.issued) },
-    { label: "Status", td: (r) => badge("active") },
-    { label: "Date", td: (r) => r.date },
-  ], rows);
+  // Register table with editable cost column
+  el("nm-table").innerHTML = table(
+    [
+      { label: "Req ID", td: (r) => r.id },
+      { label: "Purpose", td: (r) => r.purpose },
+      { label: "Type", td: (r) => badge(r.type === "IR" ? "active" : "info") },
+      { label: "Item", td: (r) => r.item },
+      { label: "Plant", td: (r) => r.plant },
+      { label: "Requested", num: true, td: (r) => fmt.format(r.req) },
+      { label: "Approved", num: true, td: (r) => fmt.format(r.appr) },
+      { label: "Issued", num: true, td: (r) => fmt.format(r.issued) },
+      { label: "Cost (৳)", num: true, td: (r) => `<input type="number" min="0" step="1" value="${r.cost || 0}" oninput="setNasimCost('${r.id}', this.value)" style="width:110px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:12px" />` },
+      { label: "Status", td: (r) => badge("active") },
+      { label: "Date", td: (r) => r.date },
+    ],
+    rows
+  );
+
+  // Dynamic marketing budget deduction
+  const committed = rows.reduce((a, r) => a + (r.cost || 0), 0);
+  const remaining = NASIM_MARKETING_BUDGET - committed;
+  const util = NASIM_MARKETING_BUDGET ? (committed / NASIM_MARKETING_BUDGET * 100) : 0;
+  el("nm-budget-total").textContent = fmtBDT(NASIM_MARKETING_BUDGET);
+  el("nm-budget-committed").textContent = fmtBDT(committed);
+  el("nm-budget-remaining").textContent = fmtBDT(Math.max(0, remaining));
+  el("nm-budget-remaining-pct").textContent = NASIM_MARKETING_BUDGET ? ((remaining / NASIM_MARKETING_BUDGET) * 100).toFixed(1) + "% of budget" : "";
+  el("nm-budget-util").textContent = util.toFixed(2) + "%";
 
   if (!window.Chart) return;
   Object.values(_nmCharts).forEach((c) => c && c.destroy());
@@ -1017,6 +1033,12 @@ function loadNasimProcurement() {
     { label: "Issued Qty", data: rows.map(r => r.issued) },
   ]}, options: { responsive: true, maintainAspectRatio: false } });
   _nmCharts.c4 = new Chart(el("nm-c4"), { type: "pie", data: { labels: ["MKOH - Advertisement & Publicity"], datasets: [{ data: [100] }] }, options: { responsive: true, maintainAspectRatio: false } });
+}
+
+function setNasimCost(id, val) {
+  const row = NASIM_ROWS.find(r => r.id === id);
+  if (row) row.cost = Math.max(0, Number(val) || 0);
+  loadNasimProcurement();
 }
 
 /* ================= INIT ================= */
