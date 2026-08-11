@@ -17,17 +17,38 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def _query(sql, params=()):
-    import server
-    return server._q(sql, params)
+    """DWH query with a short connection timeout so failures fall back to cache fast."""
+    import pymssql
+    import os as _os
+
+    try:
+        conn = pymssql.connect(
+            server=_os.getenv("MSSQL_SERVER", "203.202.241.211"),
+            port=int(_os.getenv("MSSQL_PORT", "1433")),
+            user=_os.getenv("MSSQL_USER", "mcp_user"),
+            password=_os.getenv("MSSQL_PASSWORD", "iAOS@35o997"),
+            database=_os.getenv("MSSQL_DATABASE", "DWH"),
+            login_timeout=5,
+            timeout=8,
+        )
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        conn.close()
+        return rows
+    except Exception as e:
+        return {"error": str(e)}
 
 
-def _user_id_for(reference_id: int) -> int | None:
+def _user_id_for(reference_id: int) -> int | dict | None:
     """Map an employee reference id (enroll) to the DWH user id (intUserId)."""
     rows = _query(
         "SELECT TOP 1 intUserId FROM dco.tblUserArc WHERE intUserReferenceId=%s",
         (reference_id,),
     )
-    if isinstance(rows, dict) or not rows:
+    if isinstance(rows, dict):
+        return {"error": rows.get("error", "DWH unreachable")}
+    if not rows:
         return None
     return int(rows[0][0])
 
@@ -41,15 +62,21 @@ def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
     cache_path = BASE_DIR / "database" / "nasim_procurement_cache.json"
     try:
         data = _build_procurement(enroll, business_unit)
+        dwh_error = data.pop("dwh_error", None)
         if data.get("irs") or data.get("all_pos"):
             cache_path.parent.mkdir(exist_ok=True)
             cache_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        if dwh_error and not data.get("irs") and not data.get("all_pos"):
+            raise RuntimeError(dwh_error)
         return data
-    except Exception:
+    except Exception as e:
         # fall back to cache
         if cache_path.exists():
             try:
-                return json.loads(cache_path.read_text(encoding="utf-8"))
+                cached = json.loads(cache_path.read_text(encoding="utf-8"))
+                cached["source"] = "cache"
+                cached["error"] = f"DWH unreachable: {e}"
+                return cached
             except Exception:
                 pass
         return {
@@ -58,14 +85,18 @@ def get_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
             "fiscal_years": [],
             "irs": [], "ir_items": {}, "prs": [], "pos": [],
             "all_pos": [],
-            "error": "DWH unreachable",
+            "error": f"DWH unreachable: {e}",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
         }
 
 
 def _build_procurement(enroll: int = 563614, business_unit: int = 175) -> dict:
     """Return IRs created by the employee + linked PRs/POs + marketing budget."""
+    result = {}
     user_id = _user_id_for(enroll)
+    if isinstance(user_id, dict):
+        result["dwh_error"] = user_id.get("error", "DWH unreachable")
+        return result
 
     # 1. IRs created by the employee
     irs = []
