@@ -404,6 +404,13 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._redirect("/login")
             return
+        # public static dashboards (standalone reports)
+        if p in ("/nasim-procurement", "/nasim-procurement/"):
+            self._static("standalone/Nasim Marketing Procurement.html")
+            return
+        if p in ("/procurement-inventory", "/procurement-inventory/"):
+            self._static("standalone/Procurement Inventory Dashboard.html")
+            return
         if p in ("/", "/index.html"):
             # redirect to the right shell; never serve the combined page directly
             if authorized(self):
