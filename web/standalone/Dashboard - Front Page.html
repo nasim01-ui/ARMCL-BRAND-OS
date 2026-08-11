@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrandOS — Front Page Dashboard</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--card:#273449;--border:#334155;--border2:#475569;--text:#e2e8f0;--muted:#94a3b8;--blue:#2563eb;--blue2:#1d4ed8;--accent:#38bdf8;--green:#34d399;--red:#f87171;--amber:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.top h1{font-size:22px}.top .sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.kpi .value{font-size:26px;font-weight:800}
+.kpi .delta{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+canvas{width:100%;height:auto}
+.metric-note{color:var(--muted);font-size:12px;margin-top:8px}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px}
+.green{background:rgba(52,211,153,.18);color:var(--green)}
+.amber{background:rgba(251,191,36,.18);color:var(--amber)}
+.red{background:rgba(248,113,113,.18);color:var(--red)}
+.checker{border-left:3px solid var(--border2);padding:8px 10px;margin:6px 0;background:var(--panel);border-radius:6px;font-size:12px}
+.checker.critical{border-color:var(--red)}
+.checker.warning{border-color:var(--amber)}
+.nba{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.nba-pri{min-width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,.18);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800}
+.summary-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}.num{text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>🏛 BrandOS — Front Page Dashboard</h1>
+      <div class="sub">AKIJ Ready Mix · Executive Command Center · <b>Data as of Aug 2026</b></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi"><div class="label">Today's Revenue</div><div class="value" id="rev-today">--</div><div class="delta">Net value (BDT)</div></div>
+    <div class="card kpi"><div class="label">Today's Sales</div><div class="value" id="sales-today">--</div><div class="delta">Volume (CFT)</div></div>
+    <div class="card kpi"><div class="label">MTD Revenue</div><div class="value" id="rev-mtd">--</div><div class="delta">Month to date</div></div>
+    <div class="card kpi"><div class="label">MTD Sales (Statement)</div><div class="value" id="mtd-sales">--</div><div class="delta" id="mtd-meta">--</div></div>
+    <div class="card kpi"><div class="label">Target Achievement</div><div class="value" id="achievement">--</div><div class="delta" id="achievement-meta">--</div></div>
+    <div class="card kpi"><div class="label">Market Share</div><div class="value" id="market-share">--</div><div class="delta" id="market-share-meta">--</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Revenue Trend (12 months) — BDT</h3>
+      <canvas id="rev-chart" height="230"></canvas>
+    </div>
+    <div class="card">
+      <h3>Business Strategy Health</h3>
+      <div style="font-size:40px;font-weight:800" id="health-score">--</div>
+      <div id="health-grade"></div>
+      <div id="health-components" class="metric-note"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>🚨 Early Warnings</h3>
+      <div id="warnings"></div>
+    </div>
+    <div class="card">
+      <h3>🤖 Next Best Actions (Top 3)</h3>
+      <div id="nba"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Sales Performance (Aug 2026)</h3>
+    <div id="sales-perf"></div>
+    <canvas id="target-chart" height="150"></canvas>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  today: {deliveries:81, volume:19024.76, value:7098118.79},
+  month: {deliveries:1450, volume:310000, value:116000000},
+  mtd_sales: 306268.15,
+  monthly_target: 1230000,
+  achievement_pct: 24.9,
+  revenue_trend: [
+    {month:"2025-09",revenue:320873728.8},{month:"2025-10",revenue:329916407.3},
+    {month:"2025-11",revenue:316403871.7},{month:"2025-12",revenue:338346128.4},
+    {month:"2026-01",revenue:370027780},{month:"2026-02",revenue:292921491.4},
+    {month:"2026-03",revenue:229147691.8},{month:"2026-04",revenue:219275670.6},
+    {month:"2026-05",revenue:260000000},{month:"2026-06",revenue:403873473.9},
+    {month:"2026-07",revenue:389801200},{month:"2026-08",revenue:413669479}
+  ],
+  health: {health:64.7, grade:"Attention", components:[
+    {dimension:"Strategic KPI Achievement",score:72},
+    {dimension:"Market Share Performance",score:53.9},
+    {dimension:"Brand Budget Efficiency",score:40},
+    {dimension:"Campaign Execution",score:100}
+  ]},
+  warnings: [
+    {kpi:"Market Share", level:"critical", message:"Market share 10.79% is BELOW target and forecast declining to 9.12%."},
+    {kpi:"MTD Sales Achievement", level:"warning", message:"On current run-rate, month-end sales will hit ~73% of target."},
+    {kpi:"Brand Budget Utilization", level:"warning", message:"Brand budget only 0% utilized YTD — campaigns may be under-delivering."}
+  ],
+  nba: [
+    {score:79, action:"Review sales-by-zone and dealer performance; assign owners to lagging zones.", diagnosis:"Commercial/Sales execution shortfall", owner:"Head of Sales", deadline:"2026-08-14"},
+    {score:76, action:"Accelerate delivery of delayed, strategically important campaigns before requesting additional budget.", diagnosis:"Budget under-execution + market share shortfall", owner:"Head of Brand & Marketing", deadline:"2026-08-17"},
+    {score:68, action:"Prioritize quotation follow-up on top projects; track conversion weekly.", diagnosis:"Commercial opportunity", owner:"Head of Sales", deadline:"2026-08-17"}
+  ],
+  market_share: {share:10.79, total_lakh:169.1}
+};
+const fmt=new Intl.NumberFormat("en-US",{maximumFractionDigits:0});
+const fmtBDT=n=>"৳"+fmt.format(n||0);
+
+function drawBars(canvas,items){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||230;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:10,bottom:26,left:52},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const vals=items.map(i=>i.value||0),max=Math.max(...vals,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4/1000000).toFixed(1)+"M",pad.left-6,y+3);}
+  const n=items.length||1,bw=Math.min(34,(pw/n)*0.6);
+  items.forEach((it,i)=>{const x=pad.left+(i+0.5)*(pw/n)-bw/2,h=(it.value/max)*ph,y=pad.top+ph-h;ctx.fillStyle="#2563eb";ctx.fillRect(x,y,bw,h);ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(String(it.label),pad.left+(i+0.5)*(pw/n),H-10);});
+}
+function drawTarget(canvas,items){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||150;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:12,right:10,bottom:24,left:52},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const vals=items.map(i=>i.value||0),max=Math.max(...vals,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4/10000).toFixed(0)+"万",pad.left-6,y+3);}
+  const n=items.length||1,bw=Math.min(70,(pw/n)*0.5);
+  items.forEach((it,i)=>{const x=pad.left+(i+0.5)*(pw/n)-bw/2,h=(it.value/max)*ph,y=pad.top+ph-h;ctx.fillStyle=it.color||"#2563eb";ctx.fillRect(x,y,bw,h);ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(it.label,pad.left+(i+0.5)*(pw/n),H-8);});
+}
+(function(){
+  document.getElementById("rev-today").textContent=fmtBDT(DATA.today.value);
+  document.getElementById("sales-today").textContent=fmt.format(DATA.today.volume)+" CFT";
+  document.getElementById("rev-mtd").textContent="MTD "+fmtBDT(DATA.month.value);
+  document.getElementById("mtd-sales").textContent=fmt.format(DATA.mtd_sales)+" CFT";
+  document.getElementById("mtd-meta").textContent="Target "+fmt.format(DATA.monthly_target)+" CFT · Aug'26";
+  document.getElementById("achievement").textContent=DATA.achievement_pct+"%";
+  document.getElementById("achievement-meta").textContent="of "+fmt.format(DATA.monthly_target)+" CFT target (Finance Budget)";
+  document.getElementById("market-share").textContent=DATA.market_share.share+"%";
+  document.getElementById("market-share-meta").textContent="of "+fmt.format(DATA.market_share.total_lakh)+" lakh CFT/mo rated market";
+
+  drawBars(document.getElementById("rev-chart"),DATA.revenue_trend.map(r=>({label:r.month.slice(5),value:r.revenue})));
+
+  document.getElementById("health-score").textContent=DATA.health.health+"/100";
+  document.getElementById("health-grade").innerHTML=`<span class="badge amber">${DATA.health.grade}</span>`;
+  document.getElementById("health-components").innerHTML=DATA.health.components.map(c=>`${c.dimension}: ${c.score}`).join(" · ");
+
+  document.getElementById("warnings").innerHTML=DATA.warnings.map(w=>`<div class="checker ${w.level}"><b>${w.kpi}</b> — ${w.message}</div>`).join("");
+
+  document.getElementById("nba").innerHTML=DATA.nba.map(r=>`<div class="nba"><div class="nba-pri">${r.score}</div><div><b>${r.action}</b><br><span class="metric-note">${r.diagnosis} · ${r.owner} · due ${r.deadline}</span></div></div>`).join("");
+
+  document.getElementById("sales-perf").innerHTML=`
+    <div class="summary-row"><span>Monthly Sales Target</span><b>${fmt.format(DATA.monthly_target)} CFT</b></div>
+    <div class="summary-row"><span>Achieved (Statement)</span><b>${fmt.format(DATA.mtd_sales)} CFT</b></div>
+    <div class="summary-row"><span>Completion</span><b>${DATA.achievement_pct}%</b></div>`;
+  drawTarget(document.getElementById("target-chart"),[{label:"Target",value:DATA.monthly_target,color:"#475569"},{label:"Achieved",value:DATA.mtd_sales,color:"#2563eb"}]);
+})();
+</script>
+</body>
+</html>

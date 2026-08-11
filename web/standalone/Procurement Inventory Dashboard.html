@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrandOS — Procurement &amp; Inventory (IR/PR/PO)</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--card:#273449;--border:#334155;--border2:#475569;--text:#e2e8f0;--muted:#94a3b8;--blue:#2563eb;--blue2:#1d4ed8;--accent:#38bdf8;--green:#34d399;--red:#f87171;--amber:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.top h1{font-size:22px}.top .sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.kpi .value{font-size:24px;font-weight:800}
+.kpi .delta{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+canvas{width:100%;height:auto}
+.metric-note{color:var(--muted);font-size:12px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted)}.num{text-align:right}
+.pipeline{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.step{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--border2);border-top:4px solid var(--blue);border-radius:10px;padding:14px;text-align:center}
+.step .st{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.step .nm{font-size:22px;font-weight:800;margin-top:6px}
+.step .sub{font-size:11px;color:var(--muted);margin-top:4px}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px}
+.green{background:rgba(52,211,153,.18);color:var(--green)}
+.amber{background:rgba(251,191,36,.18);color:var(--amber)}
+.red{background:rgba(248,113,113,.18);color:var(--red)}
+.blue{background:rgba(37,99,235,.18);color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>🧾 Procurement &amp; Inventory — IR / PR / PO</h1>
+      <div class="sub">AKIJ Ready Mix (Business Unit 175) · Source: DWH · <b>FY 2026-27 (Jul-Aug 2026)</b></div>
+    </div>
+  </div>
+
+  <div class="pipeline">
+    <div class="step"><div class="st">Requisition / Indent (PR)</div><div class="nm" id="pr-count">--</div><div class="sub">approved 100%</div></div>
+    <div class="step"><div class="st">Purchase Orders (PO)</div><div class="nm" id="po-count">--</div><div class="sub" id="po-approved">--</div></div>
+    <div class="step"><div class="st">PO Value (BDT)</div><div class="nm" id="po-amount">--</div><div class="sub">FY 26-27 to date</div></div>
+    <div class="step"><div class="st">Inventory Transactions</div><div class="nm" id="inv-count">--</div><div class="sub">FY 26-27</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>PR vs PO by Month (count)</h3>
+      <canvas id="pr-po-chart" height="220"></canvas>
+    </div>
+    <div class="card">
+      <h3>PO Value by Month (BDT, millions)</h3>
+      <canvas id="po-value-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Requisitions (PR) by Plant</h3>
+      <div id="pr-plant"></div>
+    </div>
+    <div class="card">
+      <h3>Top Suppliers by PO Value (FY 26-27)</h3>
+      <div id="supplier-table"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Inventory Transaction Mix (FY 26-27)</h3>
+      <canvas id="inv-type-chart" height="220"></canvas>
+      <div id="inv-type-summary" class="metric-note"></div>
+    </div>
+    <div class="card">
+      <h3>Top Materials by Transaction Qty (FY 26-27)</h3>
+      <canvas id="inv-item-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Inventory Movement — Received vs Issued (by month)</h3>
+    <div id="inv-movement-table"></div>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  summary: {po_count:310, po_amount:514481652.416898, po_approved:265, po_closed:8, pr_count:267, inv_transactions:18778},
+  pr_by_month: [["2026-07",183],["2026-08",84]],
+  po_by_month: [["2026-07",238,421298995.34],["2026-08",72,93182657.08]],
+  pr_by_plant: [["ARMCL Dhour Plant",95],["ARMCL Gazipur Plant",53],["ARMCL Rupgonj Plant",44],["ARMCL Narayanganj Plant",35],["ARMCL- Tamanna Park Plant",21],["ARMCL Chittagong Plant",19]],
+  top_suppliers: [["LAFARGEHOLCIM BANGLADESH PLC",13,156328696.76],["Akij Cement Company Ltd",8,81168548.98],["Meghna Petroleum Limited",24,23943609.54],["M/S. RAHMAN ENTERPRISE",9,22388880.86],["Seven Circle (Banglabesh) Ltd",3,21175000],["M/S. SINTHIYA ENTERPRISE",3,20427000],["Akij Building Solutions Limited",12,19660938.37],["M/S Araf Traders",3,14064715.54],["RSS ENTERPRISE",9,12585626.48],["CROWN CEMENT PLC",2,12150000]],
+  inv_types: [["Issue For Delivery",5141],["Issue For ShopFloor",5091],["Received From Shop Floor",5091],["Receive For PO To Open Stock",1096],["Issue For Maintenance",1081],["Issue For Cost Center",1064],["Transfer In",99],["Transfer Out",98],["Inventory Loan",10],["Receive Without PO",6],["Receive For Issue Return",1]],
+  inv_items: [["General Service",177928.78],["Coarse Sand FM 2.2-3.0",113284.22],["Offset Paper A4",26905],["Diesel",25752.79],["Limestone 10-20mm",16123],["Admixture Auramix 300",6000],["Cement Bulk PCC (RM)",3356.64],["Cement Bulk OPC (RM)",693.28],["RM 3500 PSI(PCC)",1730.44]],
+  inv_monthly: [["2026-07",741504.86,1517536.78],["2026-08",237927.01,613008.38]]
+};
+const fmt=new Intl.NumberFormat("en-US",{maximumFractionDigits:0});
+const bdt=n=>"৳"+fmt.format(n||0);
+
+function drawBars(canvas,items,color){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||220;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:10,bottom:26,left:52},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const vals=items.map(i=>i.value||0),max=Math.max(...vals,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4).toFixed(0),pad.left-6,y+3);}
+  const n=items.length||1,bw=Math.min(44,(pw/n)*0.5);
+  items.forEach((it,i)=>{const x=pad.left+(i+0.5)*(pw/n)-bw/2,h=(it.value/max)*ph,y=pad.top+ph-h;ctx.fillStyle=(it.color||color||"#2563eb");ctx.fillRect(x,y,bw,h);ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(String(it.label).slice(0,10),pad.left+(i+0.5)*(pw/n),H-10);if(it.value){ctx.fillStyle="#94a3b8";ctx.fillText(Math.round(it.value),pad.left+(i+0.5)*(pw/n),y-4);}});
+}
+function drawGroup(canvas,series,labels){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||220;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:10,bottom:26,left:52},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const all=series.flatMap(s=>s.values.map(v=>v||0)),max=Math.max(...all,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4).toFixed(0),pad.left-6,y+3);}
+  const n=labels.length||1,gb=Math.min(20,(pw/n)/series.length*0.7);
+  series.forEach((s,si)=>{s.values.forEach((v,i)=>{const x=pad.left+(i+0.5)*(pw/n)-(series.length*gb/2)+si*gb,h=(v/max)*ph,y=pad.top+ph-h;ctx.fillStyle=s.color;ctx.fillRect(x,y,gb,h);});});
+  labels.forEach((m,i)=>{ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(m.slice(5),pad.left+(i+0.5)*(pw/n),H-10);});
+}
+function mkTable(head, rows, numCols){
+  return `<table><thead><tr>${head.map(h=>`<th class="${numCols&&numCols.includes(h)?'num':''}">${h}</th>`).join("")}</tr></thead><tbody>`+
+    rows.map(r=>`<tr>${r.map((c,ci)=>`<td class="${numCols&&numCols.includes(head[ci])?'num':''}">${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;
+}
+
+(function(){
+  const s=DATA.summary;
+  document.getElementById("pr-count").textContent=fmt.format(s.pr_count);
+  document.getElementById("po-count").textContent=fmt.format(s.po_count);
+  document.getElementById("po-approved").textContent=s.po_approved+" approved · "+s.po_closed+" closed";
+  document.getElementById("po-amount").textContent=bdt(s.po_amount);
+  document.getElementById("inv-count").textContent=fmt.format(s.inv_transactions);
+
+  // PR vs PO month
+  drawGroup(document.getElementById("pr-po-chart"),
+    [{color:"#38bdf8",values:DATA.pr_by_month.map(r=>r[1])},{color:"#2563eb",values:DATA.po_by_month.map(r=>r[1])}],
+    DATA.pr_by_month.map(r=>r[0]));
+
+  // PO value month
+  drawBars(document.getElementById("po-value-chart"),DATA.po_by_month.map(r=>({label:r[0].slice(5),value:r[2]/1000000})));
+
+  // PR by plant
+  const prMax=Math.max(...DATA.pr_by_plant.map(r=>r[1]));
+  document.getElementById("pr-plant").innerHTML=DATA.pr_by_plant.map(r=>
+    `<div style="display:flex;align-items:center;gap:8px;margin:6px 0"><span style="width:180px;font-size:12px">${r[0]}</span><div style="flex:1;background:var(--panel);border-radius:6px;height:18px"><div style="width:${r[1]/prMax*100}%;background:#2563eb;height:18px;border-radius:6px"></div></div><span style="width:40px;text-align:right;font-size:12px">${r[1]}</span></div>`).join("");
+
+  // suppliers
+  document.getElementById("supplier-table").innerHTML=mkTable(["Supplier","POs","Value (BDT)"],DATA.top_suppliers.map(r=>[r[0],fmt.format(r[1]),bdt(r[2])]),["POs","Value (BDT)"]);
+
+  // inventory types
+  drawBars(document.getElementById("inv-type-chart"),DATA.inv_types.map(r=>({label:r[0].replace("For ","").slice(0,12),value:r[1]})),"#34d399");
+  const recv=DATA.inv_types.find(r=>r[0].startsWith("Receive"))?.[1]||0;
+  const issue=DATA.inv_types.filter(r=>r[0].startsWith("Issue")).reduce((a,r)=>a+r[1],0);
+  document.getElementById("inv-type-summary").textContent=`Received ${fmt.format(recv)} · Issued ${fmt.format(issue)} transactions`;
+
+  // inventory items
+  drawBars(document.getElementById("inv-item-chart"),DATA.inv_items.map(r=>({label:r[0].slice(0,10),value:r[1]})),"#fbbf24");
+
+  // movement table
+  document.getElementById("inv-movement-table").innerHTML=mkTable(["Month","Received Qty","Issued Qty","Net"],
+    DATA.inv_monthly.map(r=>[r[0],fmt.format(r[1]),fmt.format(r[2]),fmt.format(r[1]-r[2])]),["Received Qty","Issued Qty","Net"]);
+})();
+</script>
+</body>
+</html>

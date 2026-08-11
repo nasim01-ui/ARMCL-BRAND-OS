@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrandOS — Market Share Intelligence</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--card:#273449;--border:#334155;--border2:#475569;--text:#e2e8f0;--muted:#94a3b8;--blue:#2563eb;--blue2:#1d4ed8;--accent:#38bdf8;--green:#34d399;--red:#f87171;--amber:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.top h1{font-size:22px}.top .sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.kpi .value{font-size:26px;font-weight:800}
+.kpi .delta{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+canvas{width:100%;height:auto}
+.metric-note{color:var(--muted);font-size:12px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted)}.num{text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>📈 Market Share Intelligence</h1>
+      <div class="sub">AKIJ Ready Mix · Competitive Performance · <b>Data as of Aug 2026</b></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi"><div class="label">Latest AKIJ Share</div><div class="value" id="akij-share">--</div><div class="delta" id="akij-share-delta">--</div></div>
+    <div class="card kpi"><div class="label">Market Position</div><div class="value" id="position">--</div><div class="delta">by rated capacity/sales</div></div>
+    <div class="card kpi"><div class="label">Total Market (rated)</div><div class="value" id="total-market">--</div><div class="delta">lakh CFT/mo</div></div>
+    <div class="card kpi"><div class="label">Months of Trend Data</div><div class="value" id="months">--</div><div class="delta">monthwise trend</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Market Share Trend — AKIJ vs Competitors (%)</h3>
+      <canvas id="trend-chart" height="260"></canvas>
+      <div id="trend-summary" class="metric-note"></div>
+    </div>
+    <div class="card">
+      <h3>Average Monthly Sales by Company (lakh CFT)</h3>
+      <canvas id="share-chart" height="260"></canvas>
+      <div id="share-summary" class="metric-note"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Ready-Mix Competitor Capacity &amp; Coverage</h3>
+    <div id="comp-table"></div>
+  </div>
+</div>
+
+<script>
+const TREND = [
+  {month:'Jan-25',shah:21.0,crown:20.7,nde:26.27,basundhara:14.38,akij:12.8},
+  {month:'Feb-25',shah:25.0,crown:18.87,nde:19.74,basundhara:14.5,akij:14.14},
+  {month:'Mar-25',shah:35.58,crown:25.0,nde:29.07,basundhara:21.0,akij:17.71},
+  {month:'Apr-25',shah:15.9,crown:8.1,nde:10.48,basundhara:9.8,akij:6.5},
+  {month:'May-25',shah:32.45,crown:22.6,nde:27.23,basundhara:20.0,akij:15.5},
+  {month:'Jun-25',shah:13.1,crown:8.6,nde:13.61,basundhara:9.7,akij:8.0},
+  {month:'Jul-25',shah:19.4,crown:13.07,nde:22.1,basundhara:12.1,akij:11.39},
+  {month:'Aug-25',shah:22.76,crown:15.78,nde:21.22,basundhara:11.02,akij:11.59},
+  {month:'Sep-25',shah:20.0,crown:14.5,nde:20.48,basundhara:12.6,akij:10.19},
+  {month:'Oct-25',shah:21.0,crown:16.1,nde:21.37,basundhara:12.1,akij:10.55},
+  {month:'Nov-25',shah:23.1,crown:16.3,nde:25.28,basundhara:13.0,akij:10.06},
+  {month:'Dec-25',shah:21.0,crown:17.2,nde:22.59,basundhara:16.4,akij:10.78},
+  {month:'Jan-26',shah:21.72,crown:19.65,nde:25.08,basundhara:17.37,akij:11.76},
+  {month:'Feb-26',shah:26.02,crown:16.5,nde:14.39,basundhara:18.11,akij:9.34},
+  {month:'Mar-26',shah:21.65,crown:17.48,nde:12.86,basundhara:14.8,akij:7.12},
+  {month:'Apr-26',shah:17.3,crown:15.12,nde:11.4,basundhara:18.08,akij:6.01},
+  {month:'May-26',shah:29.72,crown:16.38,nde:11.64,basundhara:21.83,akij:9.62},
+  {month:'Jun-26',shah:24.1,crown:15.2,nde:12.5,basundhara:20.0,akij:10.79}
+];
+const COMPANIES = [
+  {company:"NDE Ready Mix",cap:3.83,eff:3.26,op:47.51,sales:18.5,util:38.9,plants:12,coverage:"Dhaka, Narayanganj, Chattogram, Mymensingh"},
+  {company:"Shah Cement",cap:2.52,eff:2.14,op:90.85,sales:21.4,util:23.6,plants:12,coverage:"Dhaka, Narayanganj, Gazipur, Tangail, Manikganj, Mymensingh"},
+  {company:"Crown Ready Mix",cap:1.51,eff:1.28,op:31.47,sales:15.56,util:49.4,plants:5,coverage:"Dhaka, Narayanganj, Gazipur, Chattogram"},
+  {company:"Bashundhara",cap:2.06,eff:1.75,op:33.56,sales:14.76,util:44.0,plants:5,coverage:"Dhaka, Narayanganj, Narsingdi, Chattogram"},
+  {company:"AKIJ Ready Mix",cap:1.51,eff:1.29,op:18.69,sales:9.7,util:51.9,plants:5,coverage:"Dhaka, Narayanganj, Gazipur, Chattogram"},
+  {company:"Borak",cap:null,eff:null,op:null,sales:null,util:null,plants:2,coverage:"Dhaka, Gazipur"},
+  {company:"PDL (RFL)",cap:null,eff:null,op:null,sales:null,util:null,plants:2,coverage:"Dhaka, Chattogram"},
+  {company:"Mir Concrete",cap:null,eff:null,op:null,sales:null,util:null,plants:1,coverage:"Dhaka"},
+  {company:"Superior RMC",cap:null,eff:null,op:null,sales:null,util:null,plants:2,coverage:"Chattogram"},
+  {company:"34 ECB RMC",cap:null,eff:null,op:null,sales:null,util:null,plants:2,coverage:"Chattogram"}
+];
+const TOTAL_MARKET = 79.92;
+
+function drawLine(canvas,months,series){
+  const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||260;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:14,bottom:26,left:44},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const all=series.flatMap(s=>s.values.map(v=>v||0)),max=Math.max(...all,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4).toFixed(0)+"%",pad.left-6,y+3);}
+  ctx.fillStyle="#64748b";ctx.textAlign="center";
+  const step=Math.max(1,Math.ceil(months.length/8));
+  months.forEach((m,i)=>{if(i%step===0)ctx.fillText(m,pad.left+(i/Math.max(1,months.length-1))*pw,H-10);});
+  series.forEach(s=>{ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();s.values.forEach((v,i)=>{const x=pad.left+(i/Math.max(1,months.length-1))*pw,y=pad.top+ph-(v/max)*ph;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();const li=s.values.length-1,lx=pad.left+(li/Math.max(1,months.length-1))*pw,ly=pad.top+ph-((s.values[li]||0)/max)*ph;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(lx,ly,3.5,0,Math.PI*2);ctx.fill();});
+}
+function drawBars(canvas,items){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||260;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:10,bottom:26,left:46},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const vals=items.map(i=>i.value||0),max=Math.max(...vals,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4).toFixed(0),pad.left-6,y+3);}
+  const n=items.length||1,bw=Math.min(44,(pw/n)*0.55);
+  items.forEach((it,i)=>{const x=pad.left+(i+0.5)*(pw/n)-bw/2,h=(it.value/max)*ph,y=pad.top+ph-h;ctx.fillStyle=it.color||"#2563eb";ctx.fillRect(x,y,bw,h);ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(String(it.label).slice(0,9),pad.left+(i+0.5)*(pw/n),H-10);if(it.value){ctx.fillStyle="#94a3b8";ctx.fillText(Math.round(it.value),pad.left+(i+0.5)*(pw/n),y-4);}});
+}
+(function(){
+  const latest=TREND[TREND.length-1], prev=TREND[TREND.length-2];
+  document.getElementById("akij-share").textContent=latest.akij+"%";
+  document.getElementById("akij-share-delta").textContent=((latest.akij-prev.akij)/prev.akij*100>=0?"+":"")+((latest.akij-prev.akij)/prev.akij*100).toFixed(1)+"% MoM · "+latest.month;
+
+  const rated=COMPANIES.filter(c=>c.sales!=null);
+  const sorted=[...rated].sort((a,b)=>b.sales-a.sales);
+  const pos=sorted.findIndex(x=>x.company.includes("AKIJ"))+1;
+  document.getElementById("position").textContent="#"+pos;
+  document.getElementById("total-market").textContent=TOTAL_MARKET+" L";
+  document.getElementById("months").textContent=TREND.length;
+
+  drawLine(document.getElementById("trend-chart"),TREND.map(r=>r.month),[
+    {label:"Akij",color:"#38bdf8",values:TREND.map(r=>r.akij)},
+    {label:"Shah",color:"#f87171",values:TREND.map(r=>r.shah)},
+    {label:"NDE",color:"#34d399",values:TREND.map(r=>r.nde)},
+    {label:"Crown",color:"#fbbf24",values:TREND.map(r=>r.crown)},
+    {label:"Basundhara",color:"#a78bfa",values:TREND.map(r=>r.basundhara)}
+  ]);
+  const ak=TREND.map(r=>r.akij),avg=(ak.reduce((a,b)=>a+b,0)/ak.length).toFixed(2);
+  document.getElementById("trend-summary").textContent=TREND.length+" months · Akij avg "+avg+"% · Source: Market Share Google Sheet";
+
+  drawBars(document.getElementById("share-chart"),rated.map(c=>({label:c.company,value:c.sales,color:c.company.includes("AKIJ")?"#38bdf8":"#2563eb"})));
+  document.getElementById("share-summary").textContent="Total rated "+TOTAL_MARKET+" lakh CFT/mo · AKIJ "+sorted.find(x=>x.company.includes("AKIJ")).sales+" lakh ("+((sorted.find(x=>x.company.includes("AKIJ")).sales/TOTAL_MARKET)*100).toFixed(1)+"%)";
+
+  document.getElementById("comp-table").innerHTML=`<table><thead><tr><th>Company</th><th class="num">Installed (Cr)</th><th class="num">Effective (Cr)</th><th class="num">Operational (L)</th><th class="num">Avg Sales</th><th class="num">Util %</th><th>Plants</th><th>Coverage</th></tr></thead><tbody>`+
+    COMPANIES.map(x=>`<tr><td>${x.company}</td><td class="num">${x.cap??"-"}</td><td class="num">${x.eff??"-"}</td><td class="num">${x.op??"-"}</td><td class="num">${x.sales??"-"}</td><td class="num">${x.util!=null?x.util+"%":"-"}</td><td>${x.plants}</td><td>${x.coverage}</td></tr>`).join("")+`</tbody></table>`;
+})();
+</script>
+</body>
+</html>

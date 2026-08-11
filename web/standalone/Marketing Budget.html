@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrandOS — Marketing Budget</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--card:#273449;--border:#334155;--border2:#475569;--text:#e2e8f0;--muted:#94a3b8;--blue:#2563eb;--blue2:#1d4ed8;--accent:#38bdf8;--green:#34d399;--red:#f87171;--amber:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.top h1{font-size:22px}.top .sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.kpi .value{font-size:26px;font-weight:800}
+.kpi .delta{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+canvas{width:100%;height:auto}
+.metric-note{color:var(--muted);font-size:12px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted)}.num{text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>💳 Marketing Budget — Budget Control Center</h1>
+      <div class="sub">FY 2026-27 · Source: Brand Budget + Finance Budget sheets · <b>Data as of Aug 2026</b></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi"><div class="label">Annual Brand Budget</div><div class="value" id="annual">--</div><div class="delta">FY 2026-27 approved</div></div>
+    <div class="card kpi"><div class="label">Till-Date Spend</div><div class="value" id="spend">--</div><div class="delta">actual committed</div></div>
+    <div class="card kpi"><div class="label">Remaining Budget</div><div class="value" id="remaining">--</div><div class="delta">available to deploy</div></div>
+    <div class="card kpi"><div class="label">Utilization</div><div class="value" id="util">--</div><div class="delta">pacing target 30% YTD</div></div>
+    <div class="card kpi"><div class="label">Finance Net-Sales Budget</div><div class="value" id="fin">--</div><div class="delta">FY 2026-27 (Source A)</div></div>
+    <div class="card kpi"><div class="label">Brand as % of Finance</div><div class="value" id="pct-fin">--</div><div class="delta">marketing allocation share</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Annual Budget by Activity (FY 2026-27, BDT)</h3>
+      <canvas id="activity-chart" height="240"></canvas>
+    </div>
+    <div class="card">
+      <h3>Quarterly Allocation (all activities, BDT)</h3>
+      <canvas id="quarter-chart" height="240"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Budget Utilization by Activity</h3>
+      <div id="util-table"></div>
+    </div>
+    <div class="card">
+      <h3>Strategic Pillar Allocation</h3>
+      <div id="pillar-table"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Finance ↔ Brand Budget Reconciliation</h3>
+    <div id="recon"></div>
+  </div>
+</div>
+
+<script>
+const ACTIVITIES = [
+  {name:"ATL",annual:3600000,q1:900000,q2:900000,q3:900000,q4:900000,spend:0,remaining:3600000},
+  {name:"BTL",annual:3450000,q1:200000,q2:200000,q3:550000,q4:2500000,spend:0,remaining:3450000},
+  {name:"Digital",annual:6130000,q1:605000,q2:1255000,q3:2660000,q4:1610000,spend:0,remaining:6130000},
+  {name:"Gifts & Printing",annual:4827500,q1:150000,q2:700000,q3:2917500,q4:1060000,spend:0,remaining:4827500},
+  {name:"OOH",annual:7900008,q1:350008,q2:2000000,q3:4700000,q4:850000,spend:0,remaining:7900008}
+];
+const PILLARS = [
+  {pillar:"Brand Leadership",budget:19777508},
+  {pillar:"Market Share Growth",budget:11500008},
+  {pillar:"Demand Generation & Digital",budget:6130000},
+  {pillar:"Commercial & Dealer Network",budget:3450000}
+];
+const ANNUAL = 25907508, SPEND = 0, FIN = 5838660095;
+const bdt=n=>"৳"+new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(n||0);
+
+function drawBars(canvas,items){
+  if(!canvas)return;const dpr=window.devicePixelRatio||1,W=canvas.clientWidth||600,H=canvas.clientHeight||240;
+  canvas.width=W*dpr;canvas.height=H*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={top:14,right:10,bottom:26,left:60},pw=W-pad.left-pad.right,ph=H-pad.top-pad.bottom;
+  const vals=items.map(i=>i.value||0),max=Math.max(...vals,1)*1.1;
+  ctx.font="10px Segoe UI";ctx.strokeStyle="#334155";
+  for(let g=0;g<=4;g++){const y=pad.top+ph-(g/4)*ph;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((max*g/4/1000000).toFixed(1)+"M",pad.left-6,y+3);}
+  const n=items.length||1,bw=Math.min(44,(pw/n)*0.55);
+  items.forEach((it,i)=>{const x=pad.left+(i+0.5)*(pw/n)-bw/2,h=(it.value/max)*ph,y=pad.top+ph-h;ctx.fillStyle=it.color||"#2563eb";ctx.fillRect(x,y,bw,h);ctx.fillStyle="#e2e8f0";ctx.textAlign="center";ctx.fillText(String(it.label).slice(0,12),pad.left+(i+0.5)*(pw/n),H-10);if(it.value){ctx.fillStyle="#94a3b8";ctx.fillText((it.value/1000).toFixed(0)+"k",pad.left+(i+0.5)*(pw/n),y-4);}});
+}
+(function(){
+  document.getElementById("annual").textContent=bdt(ANNUAL);
+  document.getElementById("spend").textContent=bdt(SPEND);
+  document.getElementById("remaining").textContent=bdt(ANNUAL-SPEND);
+  document.getElementById("util").textContent="0%";
+  document.getElementById("fin").textContent=bdt(FIN);
+  document.getElementById("pct-fin").textContent="0.44%";
+
+  drawBars(document.getElementById("activity-chart"),ACTIVITIES.map(a=>({label:a.name,value:a.annual})));
+  const qs=["Q1","Q2","Q3","Q4"], qc=["#38bdf8","#34d399","#fbbf24","#f87171"];
+  drawBars(document.getElementById("quarter-chart"),qs.map((q,qi)=>({label:q,value:ACTIVITIES.reduce((s,a)=>s+a["q"+(qi+1)],0),color:qc[qi]})));
+
+  document.getElementById("util-table").innerHTML=`<table><thead><tr><th>Activity</th><th class="num">Budget</th><th class="num">Spend</th><th class="num">Remaining</th><th class="num">Util %</th></tr></thead><tbody>`+
+    ACTIVITIES.map(u=>`<tr><td>${u.name}</td><td class="num">${bdt(u.annual)}</td><td class="num">${bdt(u.spend)}</td><td class="num">${bdt(u.remaining)}</td><td class="num">0%</td></tr>`).join("")+`</tbody></table>`;
+
+  document.getElementById("pillar-table").innerHTML=`<table><thead><tr><th>Strategic Pillar</th><th class="num">Annual Budget</th></tr></thead><tbody>`+
+    PILLARS.map(p=>`<tr><td>${p.pillar}</td><td class="num">${bdt(p.budget)}</td></tr>`).join("")+`</tbody></table>`;
+
+  document.getElementById("recon").innerHTML=`
+    <div class="metric-note" style="font-size:13px;margin-bottom:8px">
+      Approved Finance Net-Sales Budget <b>${bdt(FIN)}</b> · Brand Marketing Allocation <b>${bdt(ANNUAL)}</b> (0.44% of finance)<br>
+      Finance budget = net sales plan; Brand budget = marketing allocation. Compared for context only.
+    </div>
+    <table><thead><tr><th>Metric</th><th class="num">Finance</th><th class="num">Brand</th><th class="num">Gap</th></tr></thead><tbody>
+    <tr><td>Budget (FY 2026-27)</td><td class="num">${bdt(FIN)}</td><td class="num">${bdt(ANNUAL)}</td><td class="num">${bdt(FIN-ANNUAL)}</td></tr>
+    </tbody></table>`;
+})();
+</script>
+</body>
+</html>

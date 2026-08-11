@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BrandOS — IR/PR by Md. Nasim Uddin (563614)</title>
+<style>
+:root{--bg:#0f172a;--panel:#1e293b;--card:#273449;--border:#334155;--border2:#475569;--text:#e2e8f0;--muted:#94a3b8;--blue:#2563eb;--blue2:#1d4ed8;--accent:#38bdf8;--green:#34d399;--red:#f87171;--amber:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:1200px;margin:0 auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.top h1{font-size:22px}.top .sub{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;margin-bottom:6px}
+.kpi .value{font-size:24px;font-weight:800}
+.kpi .delta{font-size:12px;color:var(--muted);margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.card h3{font-size:14px;margin-bottom:10px;color:var(--accent)}
+canvas{width:100%;height:auto}
+.metric-note{color:var(--muted);font-size:12px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted)}.num{text-align:right}
+.badge{padding:2px 10px;border-radius:12px;font-size:11px}
+.green{background:rgba(52,211,153,.18);color:var(--green)}
+.amber{background:rgba(251,191,36,.18);color:var(--amber)}
+.red{background:rgba(248,113,113,.18);color:var(--red)}
+.blue{background:rgba(37,99,235,.18);color:var(--accent)}
+.ir-row{border:1px solid var(--border2);border-left:4px solid var(--blue);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--panel)}
+.ir-row h4{font-size:15px;margin-bottom:8px;color:var(--accent)}
+.ir-row .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:var(--muted)}
+.ir-row .meta b{color:var(--text)}
+.pipeline{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.pstep{flex:1;min-width:110px;background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:10px;text-align:center}
+.pstep .s{font-size:11px;color:var(--muted)}.pstep .n{font-size:20px;font-weight:800;margin-top:4px}
+.pstep .d{font-size:11px;color:var(--muted);margin-top:2px}
+.pstep.done{background:rgba(52,211,153,.1);border-color:var(--green)}
+.pstep.open{background:rgba(37,99,235,.1);border-color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>🧾 IR / PR — Md. Nasim Uddin (Enroll 563614)</h1>
+      <div class="sub">AKIJ Ready Mix · Creator: <b>Md. Nasim Uddin</b> (nasim01@akijcement.com) · User ID 536514 · Source: DWH</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card kpi"><div class="label">Item Requests (IR)</div><div class="value">2</div><div class="delta">created by Nasim Uddin</div></div>
+    <div class="card kpi"><div class="label">Total Qty Requested</div><div class="value">2,500</div><div class="delta">pcs (Leaflet + Umbrella)</div></div>
+    <div class="card kpi"><div class="label">IR Approved</div><div class="value">2 / 2</div><div class="delta">100% approved</div></div>
+    <div class="card kpi"><div class="label">Linked PR / PO</div><div class="value">0</div><div class="delta">no PR/PO created from IR</div></div>
+  </div>
+
+  <div class="pipeline">
+    <div class="pstep done"><div class="s">IR Created</div><div class="n">2</div><div class="d">by Nasim</div></div>
+    <div class="pstep done"><div class="s">IR Approved</div><div class="n">2</div><div class="d">by Subrata</div></div>
+    <div class="pstep open"><div class="s">Purchase Request</div><div class="n">0</div><div class="d">not created</div></div>
+    <div class="pstep open"><div class="s">Purchase Order</div><div class="n">0</div><div class="d">not created</div></div>
+  </div>
+
+  <div class="card">
+    <h3>📋 Item Requests (IR) by Nasim Uddin</h3>
+    <div id="ir-list"></div>
+  </div>
+</div>
+
+<script>
+const IRS = [
+  {
+    code:"IR-ARMCL-JUL26-1293", date:"29 Jul 2026", plant:"ARMCL Rupgonj Plant",
+    warehouse:"ARMCL-Rupganj", cost_center:"Marketing",
+    cost_element:"MKOH - Advertisement & Publicity, Royalty",
+    purpose:"Branding", item:"Leaflet", item_code:"1881328",
+    uom:"Pcs", requested:2000, approved:2000, issued:0,
+    status:"Approved", approved_by:"Subrata Kumar Singha", complete:false
+  },
+  {
+    code:"IR-ARMCL-JUL26-944", date:"23 Jul 2026", plant:"Akij House",
+    warehouse:"ARMCL Promotional Item Warehouse", cost_center:"Marketing",
+    cost_element:"MKOH - Advertisement & Publicity, Royalty",
+    purpose:"Client engagement, promotional, and branding initiative",
+    item:"Umbrella", item_code:"177158069",
+    uom:"Pcs", requested:500, approved:500, issued:0,
+    status:"Approved", approved_by:"Subrata Kumar Singha", complete:false
+  }
+];
+const fmt=new Intl.NumberFormat("en-US");
+(function(){
+  document.getElementById("ir-list").innerHTML = IRS.map(ir=>`
+    <div class="ir-row">
+      <h4>${ir.code}</h4>
+      <div class="meta">
+        <span>Request Date: <b>${ir.date}</b></span>
+        <span>Plant: <b>${ir.plant}</b></span>
+        <span>Warehouse: <b>${ir.warehouse}</b></span>
+        <span>Cost Center: <b>${ir.cost_center}</b></span>
+        <span>Purpose: <b>${ir.purpose}</b></span>
+        <span>Status: <b><span class="badge green">${ir.status}</span></b> · Approved by ${ir.approved_by}</span>
+      </div>
+      <table>
+        <thead><tr><th>Item</th><th class="num">Code</th><th class="num">Requested</th><th class="num">Approved</th><th class="num">Issued</th><th class="num">Pending</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>${ir.item}</td><td class="num">${ir.item_code}</td>
+            <td class="num">${fmt.format(ir.requested)} ${ir.uom}</td>
+            <td class="num">${fmt.format(ir.approved)} ${ir.uom}</td>
+            <td class="num">${fmt.format(ir.issued)} ${ir.uom}</td>
+            <td class="num"><b>${fmt.format(ir.approved - ir.issued)} ${ir.uom}</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`).join("");
+})();
+</script>
+</body>
+</html>
