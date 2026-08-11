@@ -202,7 +202,7 @@ async function loadDashboard() {
 
   const t = o.today || {}, w = o.week || {}, m = o.month || {};
   if (el("dash-rev-today")) el("dash-rev-today").textContent = fmtBDT(t.value);
-  if (el("dash-sales-today")) el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
+  if (el("dash-sales-today")) el("dash-sales-today").textContent = fmt.format(t.volume) + " CFT";
   if (el("dash-rev-mtd")) el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
 
   let target = 55000, achieved = null, ach = 0, tLabel = "", aLabel = "";
@@ -311,8 +311,11 @@ function loadRevenue() {
 async function loadSales() {
   const o = await api("/api/overview");
   const m = o.month || {}, t = o.today || {};
-  document.getElementById("s-daily").textContent = fmt.format(t.volume) + " m³";
-  document.getElementById("s-mtd").textContent = fmt.format(m.volume) + " m³ (DWH)";
+  document.getElementById("s-daily").textContent = fmt.format(t.volume) + " CFT";
+  // MTD sales: prefer customer statement (Source E2), else DWH volume (both CFT)
+  document.getElementById("s-mtd").textContent = o.mtd_sales != null
+    ? fmt.format(o.mtd_sales) + " CFT (statement)"
+    : (m.volume ? fmt.format(m.volume) + " CFT (DWH)" : "--");
 
   // Monthly target from finance budget (Source A), fall back to statement
   const targetEl = document.getElementById("s-target");
