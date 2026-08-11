@@ -777,7 +777,27 @@ def report_payload() -> dict:
 STORES = set(STORES)
 
 
+def _auto_refresh_loop():
+    """Periodically re-fetch the statement + market sheets so MTD/market data
+    stays fresh without depending on browser requests."""
+    import threading
+
+    def _run():
+        while True:
+            try:
+                market_fetch.get_sales_status(force=True)
+                market_fetch.get_market_trend(force=True)
+            except Exception as e:  # noqa: BLE001
+                print(f"auto-refresh error: {e}")
+            time.sleep(int(os.getenv("BRANDOS_AUTO_REFRESH_SEC", "900")))
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+
+
 def run(port: int = 8000):
+    if os.getenv("BRANDOS_AUTO_REFRESH", "1") != "0":
+        _auto_refresh_loop()
     srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"SKILL Dashboard  ->  http://localhost:{port}")
     try:

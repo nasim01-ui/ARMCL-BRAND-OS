@@ -220,6 +220,8 @@ async function loadDashboard() {
   if (el("dash-share")) el("dash-share").textContent = await akijShareLabel();
   if (el("dash-health")) el("dash-health").textContent = "94%";
 
+  loadMtdSales();  // populate/refresh MTD Sales card from the statement sheet
+
   if (Array.isArray(rev)) {
     const chartEl = document.getElementById("revenue-chart");
     if (chartEl) drawBars(chartEl, rev.map((r) => ({ label: r.month.slice(5), value: r.revenue })));
@@ -245,6 +247,38 @@ async function akijShareLabel() {
   const items = d.items || [];
   const akij = items.find((x) => (x.company || "").toLowerCase().includes("akij"));
   return akij ? (akij.share_pct || akij.actual_sales_avg).toFixed(1) + "%" : "-";
+}
+
+/* ---- MTD Sales card (customer statement sheet) + auto-refresh ---- */
+async function loadMtdSales() {
+  const card = document.getElementById("dash-mtd-sales");
+  if (!card) return;
+  try {
+    const s = await api("/api/sales-status?refresh=1");
+    const val = card;
+    if (!s.error && s.mtd_sales != null) {
+      val.textContent = fmt.format(s.mtd_sales) + " CFT";
+      const meta = document.getElementById("dash-mtd-sales-meta");
+      if (meta) meta.textContent = `Target ${fmt.format(s.monthly_target || 0)} CFT · ${s.month || ""} · ${(s.achievement_pct != null ? s.achievement_pct.toFixed(1) + "%" : "")} · upd ${(s.updated_at || "").slice(5, 16)}`;
+      // also sync the main target/achievement cards
+      const tEl = document.getElementById("dash-target");
+      if (tEl && s.achievement_pct != null) tEl.textContent = s.achievement_pct.toFixed(0) + "%";
+    } else {
+      val.textContent = "--";
+      const meta = document.getElementById("dash-mtd-sales-meta");
+      if (meta) meta.textContent = s.error || "statement unavailable";
+    }
+  } catch (e) {
+    card.textContent = "--";
+  }
+}
+
+/* auto-refresh the statement sheet every N minutes */
+function startMtdAutoRefresh() {
+  const mins = Number((window.BRANDOS_MTD_REFRESH_MIN || 15));
+  setInterval(loadMtdSales, mins * 60 * 1000);
+  const btn = document.getElementById("dash-mtd-refresh");
+  if (btn) btn.addEventListener("click", () => { btn.textContent = "↻ ..."; loadMtdSales().finally(() => { btn.textContent = "↻ Refresh"; }); });
 }
 
 async function loadMiniMarket() {
@@ -944,5 +978,6 @@ function init() {
   loadActionCenter();
   loadDecisionRegister();
   loadForecast();
+  startMtdAutoRefresh();
   window.addEventListener("resize", () => {});
 }
