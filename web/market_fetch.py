@@ -180,12 +180,65 @@ def get_market_trend(force: bool = False) -> dict:
         return {"error": str(e), "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 
+def _finance_monthly_target(month_label: str) -> float | None:
+    """Monthly sales target (Sales Qty CFT) from the Finance Budget store.
+
+    month_label forms like "Aug'26" are mapped to the canonical YYYY-MM key
+    used in database/finance_budget.json (e.g. 2026-08). Returns None when the
+    finance data is missing so callers can fall back to the statement target.
+    """
+    import json as _json
+
+    try:
+        store = Path(DATA_DIR / "finance_budget.json")
+        if not store.exists():
+            return None
+        rows = _json.loads(store.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(rows, list):
+        return None
+
+    # map "Aug'26" -> "2026-08"
+    months = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+              "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+    mkey = None
+    low = (month_label or "").lower().replace("'", "").replace(" ", "")
+    for name, m in months.items():
+        if low.startswith(name):
+            nums = [w for w in low if w.isdigit()]
+            yy = int("".join(nums[-2:])) if len(nums) >= 2 else 26
+            yyyy = 2000 + yy
+            mkey = f"{yyyy:04d}-{m:02d}"
+            break
+    if not mkey:
+        # already a YYYY-MM form?
+        import re
+        mm = re.match(r"(\d{4})-(\d{2})", month_label or "")
+        if mm:
+            mkey = mm.group(0)
+
+    if not mkey:
+        return None
+    for r in rows:
+        if str(r.get("month", "")) == mkey:
+            try:
+                qty = float(r.get("sales_qty_cft"))
+                return qty
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
 def get_sales_status(force: bool = False) -> dict:
     """MTD sales achievement from the ARMCL-Aug26 customer-statement sheet.
 
     Reads the 'Information At a Glance' key/value pairs (column P = label,
     column Q = value) and the month header. Used to reconcile Sales
     Performance vs DWH actuals.
+
+    Monthly sales TARGET is taken from the FINANCE BUDGET sheet (Source A)
+    when available for the current month (source-of-truth precedence).
     """
     now = time.time()
     if not force and _cache["sales"] is not None and (now - _cache["sales_at"]) < TTL:
@@ -229,8 +282,20 @@ def get_sales_status(force: bool = False) -> dict:
         days_remaining = _f("Days Remaining")
         rads = _f("RADS")
 
+        # Source-of-truth override: monthly sales target from the FINANCE BUDGET
+        # sheet (Source A) when available for the current month.
+        finance_target = _finance_monthly_target(month_label)
+        if finance_target is not None:
+            monthly_target = finance_target
+            target_source = "Finance Budget (Source A)"
+        else:
+            target_source = "Customer Statement (E2)"
+
         achievement_pct = (achievement * 100.0) if achievement is not None else None
         if monthly_target and mtd_sales and achievement_pct is None:
+            achievement_pct = round((mtd_sales / monthly_target) * 100.0, 2)
+        elif monthly_target and mtd_sales:
+            # recompute against the authoritative target
             achievement_pct = round((mtd_sales / monthly_target) * 100.0, 2)
 
         data = {
@@ -240,6 +305,7 @@ def get_sales_status(force: bool = False) -> dict:
             "tab": sheet_label,
             "month": month_label,
             "monthly_target": monthly_target,
+            "monthly_target_source": target_source,
             "mtd_sales": mtd_sales,
             "present_ads": present_ads,
             "logical_sales_till_date": logical_sales,
