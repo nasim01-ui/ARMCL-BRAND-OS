@@ -205,7 +205,7 @@ async function loadDashboard() {
   if (el("dash-sales-today")) el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
   if (el("dash-rev-mtd")) el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
 
-  let target = 55000, achieved = m.volume || 0, ach = 0, tLabel = "", aLabel = "";
+  let target = 55000, achieved = null, ach = 0, tLabel = "", aLabel = "";
   if (o.monthly_target != null) {
     target = o.monthly_target;
     tLabel = " (finance budget)";
@@ -214,8 +214,8 @@ async function loadDashboard() {
     achieved = o.mtd_sales;
     aLabel = " (statement MTD)";
   }
-  ach = target ? Math.round(achieved * 100 / target) : 0;
-  if (el("dash-target")) el("dash-target").textContent = ach + "%";
+  ach = (target && achieved) ? Math.round(achieved * 100 / target) : 0;
+  if (el("dash-target")) el("dash-target").textContent = achieved != null ? ach + "%" : "--";
   if (el("dash-target-val")) el("dash-target-val").textContent = `of ${fmt.format(target)} CFT`;
   if (el("dash-share")) el("dash-share").textContent = await akijShareLabel();
   if (el("dash-health")) el("dash-health").textContent = "94%";
@@ -226,14 +226,14 @@ async function loadDashboard() {
   }
 
   const chart2 = document.getElementById("sales-target-chart");
-  if (chart2) drawBars(chart2, [{ label: "Target", value: target }, { label: "Achieved", value: achieved }]);
+  if (chart2) drawBars(chart2, [{ label: "Target", value: target }, { label: "Achieved", value: achieved || 0 }]);
 
   const perfEl = document.getElementById("sales-perf");
   if (perfEl) perfEl.innerHTML = `
     <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">${fmt.format(target)} CFT${tLabel}</span></div>
-    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(achieved)} CFT${aLabel}</span></div>
-    <div class="summary-row"><span class="lbl">Completion</span><span class="val">${o.achievement_pct != null ? o.achievement_pct.toFixed(1) + "%" : ach + "%"}</span></div>`;
-  if (el("dash-target")) el("dash-target").textContent = (o.achievement_pct != null ? o.achievement_pct.toFixed(0) : ach) + "%";
+    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${achieved != null ? fmt.format(achieved) + " CFT" + aLabel : "--"}</span></div>
+    <div class="summary-row"><span class="lbl">Completion</span><span class="val">${o.achievement_pct != null ? o.achievement_pct.toFixed(1) + "%" : (achieved != null ? ach + "%" : "--")}</span></div>`;
+  if (el("dash-target")) el("dash-target").textContent = o.achievement_pct != null ? o.achievement_pct.toFixed(0) + "%" : (achieved != null ? ach + "%" : "--");
 
   loadMiniMarket();
   loadTasks();
@@ -312,7 +312,7 @@ async function loadSales() {
   const o = await api("/api/overview");
   const m = o.month || {}, t = o.today || {};
   document.getElementById("s-daily").textContent = fmt.format(t.volume) + " m³";
-  document.getElementById("s-mtd").textContent = fmt.format(m.volume) + " m³";
+  document.getElementById("s-mtd").textContent = fmt.format(m.volume) + " m³ (DWH)";
 
   // Monthly target from finance budget (Source A), fall back to statement
   const targetEl = document.getElementById("s-target");
@@ -324,7 +324,7 @@ async function loadSales() {
     }
   }
 
-  let achLabel = "70%";
+  let achLabel = "--";
   if (o.achievement_pct != null) {
     achLabel = o.achievement_pct.toFixed(1) + "%";
     if (o.mtd_sales != null) achLabel += " (statement)";
@@ -332,8 +332,8 @@ async function loadSales() {
   document.getElementById("s-ach").textContent = achLabel;
 
   const status = await api("/api/sales-status");
-  if (!status.error) {
-    if (status.mtd_sales != null) document.getElementById("s-mtd").textContent = fmt.format(status.mtd_sales) + " CFT";
+  if (!status.error && status.mtd_sales != null) {
+    document.getElementById("s-mtd").textContent = fmt.format(status.mtd_sales) + " CFT (statement)";
     if (status.monthly_target != null && targetEl) targetEl.textContent = fmt.format(status.monthly_target) + " CFT";
     if (status.achievement_pct != null) document.getElementById("s-ach").textContent = status.achievement_pct.toFixed(1) + "%";
   }
