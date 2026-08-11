@@ -971,36 +971,50 @@ async function loadForecast() {
   }
 }
 
-/* ================= NASIM MARKETING PROCUREMENT ================= */
-const NASIM_ROWS = [
-  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29", cost:6680, po:"PO-ARMCL-AUG26-72 (SB DESIGN)", poValue:6680 },
-  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23", cost:0, po:"", poValue:0 }
-];
-const NASIM_MARKETING_BUDGET = 25907508; // FY 2026-27 approved brand budget (Source B)
-function loadNasimProcurement() {
-  const rows = NASIM_ROWS;
+/* ================= NASIM MARKETING PROCUREMENT (dynamic) ================= */
+let NASIM_STATE = { irs: [], items: [], prs: [], pos: [], budget: 0 };
+async function loadNasimProcurement() {
   const el = (id) => document.getElementById(id);
   if (!el("nm-k1")) return;
-  const tq = rows.reduce((a, r) => a + r.req, 0);
-  const aq = rows.reduce((a, r) => a + r.appr, 0);
-  const iq = rows.reduce((a, r) => a + r.issued, 0);
-  const committed = rows.reduce((a, r) => a + (r.cost || 0), 0);
-  const remaining = NASIM_MARKETING_BUDGET - committed;
-  const util = NASIM_MARKETING_BUDGET ? (committed / NASIM_MARKETING_BUDGET * 100) : 0;
+  const enroll = 563614;
+  try {
+    const d = await api("/api/nasim-procurement?enroll=" + enroll);
+    if (d && d.irs) {
+      NASIM_STATE.irs = d.irs || [];
+      NASIM_STATE.items = Object.values(d.ir_items || {}).flat() || [];
+      NASIM_STATE.prs = d.prs || [];
+      NASIM_STATE.pos = d.pos || [];
+      NASIM_STATE.budget = d.marketing_budget || 25907508;
+    }
+  } catch (e) {
+    console.error("nasim procurement load failed", e);
+  }
+  const rows = NASIM_STATE.irs;
+  const items = NASIM_STATE.items;
+  const prs = NASIM_STATE.prs;
+  const pos = NASIM_STATE.pos;
+  const BUDGET = NASIM_STATE.budget;
+
+  const tq = items.reduce((a, r) => a + (r.requested || 0), 0);
+  const aq = items.reduce((a, r) => a + (r.approved || 0), 0);
+  const iq = items.reduce((a, r) => a + (r.issued || 0), 0);
+  const committed = pos.reduce((a, r) => a + (r.po_amount || 0), 0);
+  const remaining = BUDGET - committed;
+  const util = BUDGET ? (committed / BUDGET * 100) : 0;
 
   // KPI cards
   el("nm-k1").textContent = rows.length;
   el("nm-k2").textContent = fmt.format(tq);
-  el("nm-k3").textContent = rows.filter(r => r.status === "Approved").length + " / " + rows.length;
+  el("nm-k3").textContent = rows.filter(r => r.approved).length + " / " + rows.length;
   el("nm-k4").textContent = fmt.format(iq);
-  el("nm-k5").textContent = rows.filter(r => r.po).length;
-  el("nm-k6").textContent = rows.filter(r => r.poValue > 0).length;
+  el("nm-k5").textContent = prs.length;
+  el("nm-k6").textContent = pos.length;
 
   // Budget cards + progress bar
-  el("nm-budget-total").textContent = fmtBDT(NASIM_MARKETING_BUDGET);
+  el("nm-budget-total").textContent = fmtBDT(BUDGET);
   el("nm-budget-committed").textContent = fmtBDT(committed);
   el("nm-budget-remaining").textContent = fmtBDT(Math.max(0, remaining));
-  el("nm-budget-remaining-pct").textContent = NASIM_MARKETING_BUDGET ? ((Math.max(0, remaining) / NASIM_MARKETING_BUDGET) * 100).toFixed(1) + "% of budget" : "";
+  el("nm-budget-remaining-pct").textContent = BUDGET ? ((Math.max(0, remaining) / BUDGET) * 100).toFixed(1) + "% of budget" : "";
   el("nm-budget-util").textContent = util.toFixed(2) + "%";
   const bar = document.getElementById("nm-budget-bar");
   if (bar) bar.style.width = Math.min(100, util).toFixed(2) + "%";
@@ -1010,48 +1024,46 @@ function loadNasimProcurement() {
   if (p) {
     const steps = [
       { s: "IR Created", n: rows.length, c: "done" },
-      { s: "IR Approved", n: rows.filter(r => r.status === "Approved").length, c: "done" },
-      { s: "PR Created", n: 0, c: "open" },
-      { s: "PO Issued", n: rows.filter(r => r.po).length, c: rows.filter(r => r.po).length ? "done" : "open" },
+      { s: "IR Approved", n: rows.filter(r => r.approved).length, c: "done" },
+      { s: "PR Created", n: prs.length, c: prs.length ? "done" : "open" },
+      { s: "PO Issued", n: pos.length, c: pos.length ? "done" : "open" },
       { s: "Budget Deducted", n: committed ? fmtBDT(committed) : "0", c: committed ? "done" : "open" },
     ];
     p.innerHTML = steps.map(st => `<div class="pstep ${st.c}"><div class="s">${st.s}</div><div class="n">${st.n}</div></div>`).join("");
   }
 
-  // Item cards
+  // Item cards (one per IR, with its items + linked PR/PO)
   el("nm-table").innerHTML = `
     <div class="grid cards">
-      ${rows.map(r => {
-        const issuePct = r.appr ? Math.round(r.issued / r.appr * 100) : 0;
-        const cost = r.cost || 0;
+      ${rows.map(ir => {
+        const its = items.filter(x => x.ir_code === ir.ir_code);
+        const itemName = its.map(x => x.item).join(", ") || "—";
+        const reqQty = its.reduce((a, x) => a + (x.requested || 0), 0);
+        const apprQty = its.reduce((a, x) => a + (x.approved || 0), 0);
+        const issQty = its.reduce((a, x) => a + (x.issued || 0), 0);
+        const issuePct = apprQty ? Math.round(issQty / apprQty * 100) : 0;
+        const po = pos.find(x => x.ir_code === ir.ir_code);
+        const pr = prs.find(x => x.ir_code === ir.ir_code);
+        const cost = po ? (po.po_amount || 0) : 0;
         return `<div class="card item-card">
-          <div class="item-head"><b>${r.item}</b> <span class="badge green">${r.status}</span></div>
+          <div class="item-head"><b>${itemName}</b> <span class="badge green">${ir.approved ? "Approved" : "Pending"}</span></div>
           <div class="item-meta">
-            <span>IR: ${r.id}</span>
-            <span>${r.plant}</span>
-            <span>${r.date}</span>
+            <span>IR: ${ir.ir_code}</span>
+            <span>${ir.plant}</span>
+            <span>${ir.request_date}</span>
           </div>
           <div class="item-rows">
-            <div class="summary-row"><span>Requested</span><b>${fmt.format(r.req)} pcs</b></div>
-            <div class="summary-row"><span>Approved</span><b>${fmt.format(r.appr)} pcs</b></div>
-            <div class="summary-row"><span>Issued</span><b>${fmt.format(r.issued)} pcs (${issuePct}%)</b></div>
-            <div class="summary-row"><span>PO / Vendor</span><b>${r.po || "—"}</b></div>
+            <div class="summary-row"><span>Requested</span><b>${fmt.format(reqQty)} pcs</b></div>
+            <div class="summary-row"><span>Approved</span><b>${fmt.format(apprQty)} pcs</b></div>
+            <div class="summary-row"><span>Issued</span><b>${fmt.format(issQty)} pcs (${issuePct}%)</b></div>
+            <div class="summary-row"><span>PR</span><b>${pr ? pr.pr_code : "—"}</b></div>
+            <div class="summary-row"><span>PO / Vendor</span><b>${po ? po.po_no + " · " + po.vendor : "—"}</b></div>
             <div class="summary-row"><span>Cost (৳)</span><b>${fmtBDT(cost)}</b></div>
-          </div>
-          <div class="item-cost">
-            <label>Set cost (৳)</label>
-            <input type="number" min="0" step="1" value="${cost}" oninput="setNasimCost('${r.id}', this.value)" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px;font-size:13px;margin-top:4px" />
           </div>
         </div>`;
       }).join("")}
     </div>
-    <div class="metric-note" style="margin-top:10px">Edit the cost field on any item card → Committed, Remaining and Utilization update live.</div>`;
-}
-
-function setNasimCost(id, val) {
-  const row = NASIM_ROWS.find(r => r.id === id);
-  if (row) row.cost = Math.max(0, Number(val) || 0);
-  loadNasimProcurement();
+    <div class="metric-note" style="margin-top:10px">Data auto-fetched from DWH via /api/nasim-procurement (enroll 563614). Committed = linked PO amounts deducted from Marketing Budget.</div>`;
 }
 
 /* ================= INIT ================= */

@@ -211,6 +211,16 @@ def api_brand_budget():
     return {"items": sync_sheets._read_store("brand_budget")}
 
 
+def api_nasim_procurement():
+    import nasim_procurement
+
+    try:
+        enroll = int(request.args.get("enroll", 563614))
+    except (TypeError, ValueError):
+        enroll = 563614
+    return nasim_procurement.get_procurement(enroll, 175)
+
+
 def api_strategy():
     import strategy
 
@@ -353,6 +363,7 @@ APP_API = {
     "/api/data-health": api_data_health,
     "/api/finance-budget": api_finance_budget,
     "/api/brand-budget": api_brand_budget,
+    "/api/nasim-procurement": api_nasim_procurement,
     "/api/strategy": api_strategy,
     "/api/strategy-health": api_strategy_health,
     "/api/strategy-map": api_strategy_map,

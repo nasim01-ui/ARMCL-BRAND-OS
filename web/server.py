@@ -47,6 +47,7 @@ import evaluate
 import nba
 import commercial
 import ask
+import nasim_procurement
 import forecast
 import management
 import audit
@@ -596,6 +597,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if p == "/api/commercial":
             self._json(commercial.commercial_payload())
+            return
+        if p == "/api/nasim-procurement":
+            qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
+            try:
+                enroll = int(qs.get("enroll", 563614))
+            except ValueError:
+                enroll = 563614
+            self._json(nasim_procurement.get_procurement(enroll, ARMCL_UNIT_ID))
             return
         if p == "/api/ask":
             qs = dict(x.split("=", 1) for x in urlparse(self.path).query.split("&") if "=" in x)
