@@ -973,8 +973,8 @@ async function loadForecast() {
 
 /* ================= NASIM MARKETING PROCUREMENT ================= */
 const NASIM_ROWS = [
-  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29", cost:0 },
-  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23", cost:0 }
+  { id:"IR-ARMCL-JUL26-1293", purpose:"Branding", type:"IR", item:"Leaflet", plant:"ARMCL Rupgonj Plant", req:2000, appr:2000, issued:0, status:"Approved", date:"2026-07-29", cost:6680, po:"PO-ARMCL-AUG26-72 (SB DESIGN)", poValue:6680 },
+  { id:"IR-ARMCL-JUL26-944", purpose:"Client engagement, promotional & branding", type:"IR", item:"Umbrella", plant:"Akij House (Promo WH)", req:500, appr:500, issued:0, status:"Approved", date:"2026-07-23", cost:0, po:"", poValue:0 }
 ];
 const NASIM_MARKETING_BUDGET = 25907508; // FY 2026-27 approved brand budget (Source B)
 const _nmCharts = {};
@@ -1004,6 +1004,8 @@ function loadNasimProcurement() {
       { label: "Approved", num: true, td: (r) => fmt.format(r.appr) },
       { label: "Issued", num: true, td: (r) => fmt.format(r.issued) },
       { label: "Cost (৳)", num: true, td: (r) => `<input type="number" min="0" step="1" value="${r.cost || 0}" oninput="setNasimCost('${r.id}', this.value)" style="width:110px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:12px" />` },
+      { label: "Linked PO", td: (r) => r.po || "—" },
+      { label: "PO Value (৳)", num: true, td: (r) => r.poValue ? fmt.format(r.poValue) : "—" },
       { label: "Status", td: (r) => badge("active") },
       { label: "Date", td: (r) => r.date },
     ],
