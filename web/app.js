@@ -205,14 +205,18 @@ async function loadDashboard() {
   if (el("dash-sales-today")) el("dash-sales-today").textContent = fmt.format(t.volume) + " m³";
   if (el("dash-rev-mtd")) el("dash-rev-mtd").textContent = "MTD " + fmtBDT(m.value);
 
-  let target = 55000, achieved = m.volume || 0, ach = 0, achLabel = "";
+  let target = 55000, achieved = m.volume || 0, ach = 0, tLabel = "", aLabel = "";
+  if (o.monthly_target != null) {
+    target = o.monthly_target;
+    tLabel = " (finance budget)";
+  }
   if (o.mtd_sales != null) {
-    target = o.monthly_target || target;
-    achieved = o.mtd_sales || achieved;
-    achLabel = " sheet";
+    achieved = o.mtd_sales;
+    aLabel = " (statement MTD)";
   }
   ach = target ? Math.round(achieved * 100 / target) : 0;
   if (el("dash-target")) el("dash-target").textContent = ach + "%";
+  if (el("dash-target-val")) el("dash-target-val").textContent = `of ${fmt.format(target)} CFT`;
   if (el("dash-share")) el("dash-share").textContent = await akijShareLabel();
   if (el("dash-health")) el("dash-health").textContent = "94%";
 
@@ -226,8 +230,8 @@ async function loadDashboard() {
 
   const perfEl = document.getElementById("sales-perf");
   if (perfEl) perfEl.innerHTML = `
-    <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">${fmt.format(target)} CFT${achLabel ? " (sheet)" : ""}</span></div>
-    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(achieved)} CFT${achLabel ? " (statement MTD)" : ""}</span></div>
+    <div class="summary-row"><span class="lbl">Monthly Sales Target</span><span class="val">${fmt.format(target)} CFT${tLabel}</span></div>
+    <div class="summary-row"><span class="lbl">Achieved</span><span class="val">${fmt.format(achieved)} CFT${aLabel}</span></div>
     <div class="summary-row"><span class="lbl">Completion</span><span class="val">${o.achievement_pct != null ? o.achievement_pct.toFixed(1) + "%" : ach + "%"}</span></div>`;
   if (el("dash-target")) el("dash-target").textContent = (o.achievement_pct != null ? o.achievement_pct.toFixed(0) : ach) + "%";
 
@@ -310,6 +314,16 @@ async function loadSales() {
   document.getElementById("s-daily").textContent = fmt.format(t.volume) + " m³";
   document.getElementById("s-mtd").textContent = fmt.format(m.volume) + " m³";
 
+  // Monthly target from finance budget (Source A), fall back to statement
+  const targetEl = document.getElementById("s-target");
+  if (targetEl) {
+    if (o.monthly_target != null) {
+      targetEl.textContent = fmt.format(o.monthly_target) + " CFT";
+    } else {
+      targetEl.textContent = "--";
+    }
+  }
+
   let achLabel = "70%";
   if (o.achievement_pct != null) {
     achLabel = o.achievement_pct.toFixed(1) + "%";
@@ -318,8 +332,10 @@ async function loadSales() {
   document.getElementById("s-ach").textContent = achLabel;
 
   const status = await api("/api/sales-status");
-  if (!status.error && status.mtd_sales != null) {
-    document.getElementById("s-mtd").textContent = fmt.format(status.mtd_sales) + " m³";
+  if (!status.error) {
+    if (status.mtd_sales != null) document.getElementById("s-mtd").textContent = fmt.format(status.mtd_sales) + " CFT";
+    if (status.monthly_target != null && targetEl) targetEl.textContent = fmt.format(status.monthly_target) + " CFT";
+    if (status.achievement_pct != null) document.getElementById("s-ach").textContent = status.achievement_pct.toFixed(1) + "%";
   }
 
   const rev = await api("/api/monthly-revenue");
